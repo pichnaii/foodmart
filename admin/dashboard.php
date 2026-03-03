@@ -1,6 +1,21 @@
 <?php
-    $currencyCode = 'USD';
-    $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+    // $currencyCode = 'USD';
+    // $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+
+
+    $currencyCode = '$';
+    if (class_exists('NumberFormatter')) {
+        $numFormatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+        function format_currency($amount, $currencyCode = '$') {
+            global $numFormatter;
+            return $numFormatter->formatCurrency($amount ?? 0, $currencyCode);
+        }
+    } else {
+        function format_currency($amount, $currencyCode = '$') {
+            $amt = number_format((float)($amount ?? 0), 2);
+            return $currencyCode . ' ' . $amt;
+        }
+    }
 ?>
 <!-- Content Start -->
 <div class="content">
@@ -28,7 +43,7 @@
                     <i class="fa fa-chart-bar fa-3x text-light"></i>
                     <div class="ms-3">
                         <p class="mb-2 text-light">Total Cost Of Products</p>
-                        <h6 class="mb-0 text-light float-end fs-4"><?= $formatter->formatCurrency($totalProduct['cost'], $currencyCode) ?></h6>
+                        <h6 class="mb-0 text-light float-end fs-4"><?= format_currency($totalProduct['cost'], $currencyCode) ?></h6>
                     </div>
                 </div>
             </div>
@@ -37,7 +52,7 @@
                     <i class="fa fa-chart-area fa-3x text-light"></i>
                     <div class="ms-3">
                         <p class="mb-2 text-light">Today Price Of Products</p>
-                        <h6 class="mb-0 text-light float-end fs-4"><?= $formatter->formatCurrency($totalProduct['price'], $currencyCode) ?></h6>
+                        <h6 class="mb-0 text-light float-end fs-4"><?= format_currency($totalProduct['price'], $currencyCode) ?></h6>
                     </div>
                 </div>
             </div>
@@ -56,17 +71,17 @@
                         <i class="fa fa-money-bill-alt fa-3x text-light"></i>
                         <div class="ms-0">
                             <p class="mb-0 text-light">Today Purchase</p>
-                            <h6 class="mb-0 text-light float-end fs-3"><?= $formatter->formatCurrency($purchasetoday['grand_total'], $currencyCode) ?></h6>
+                            <h6 class="mb-0 text-light float-end fs-3"><?= format_currency($purchasetoday['grand_total'], $currencyCode) ?></h6>
                         </div>
                     </div>
                     <div class="d-flex align-items-center justify-content-between p-3">
                         <div class="ms-0">
                             <p class="mb-0 text-light">Last Month</p>
-                            <h6 class="mb-0 text-light fs-5"><?= $formatter->formatCurrency($purchaseslastmonth['grand_total'], $currencyCode) ?></h6>
+                            <h6 class="mb-0 text-light fs-5"><?= format_currency($purchaseslastmonth['grand_total'], $currencyCode) ?></h6>
                         </div>
                         <div class="ms-0">
                             <p class="mb-0 text-light text-end">This Month</p>
-                            <h6 class="mb-0 text-light float-end fs-5"><?= $formatter->formatCurrency($purchasesthismonth['grand_total'], $currencyCode) ?></h6>
+                            <h6 class="mb-0 text-light float-end fs-5"><?= format_currency($purchasesthismonth['grand_total'], $currencyCode) ?></h6>
                         </div>
                     </div>
                 </div>
