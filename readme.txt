@@ -76,8 +76,8 @@ Thanks for downloading from TemplatesJungle.com !
 how to push code to github
 1 git status 
 2 git add . or git add path\to\file.php (add specific files)
-3 git git commit -m "Describe what you changed"
-4 git git push origin main OR git push origin master (if our brand is master)
+3 git commit -m "Describe what you changed"
+4 git push origin main OR git push origin master (if our brand is master)
 
 
 Quick Tips
