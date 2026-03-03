@@ -72,3 +72,16 @@ Magnific Lightbox - https://github.com/dimsemenov/Magnific-Popup
 Thanks for downloading from TemplatesJungle.com !
 
 
+
+how to push code to github
+1 git status 
+2 git add . or git add path\to\file.php (add specific files)
+3 git git commit -m "Describe what you changed"
+4 git git push origin main OR git push origin master (if our brand is master)
+
+
+Quick Tips
+1 Always pull first (if other people also work on the repo) git pull origin main
+2 Check which branch you are on: git branch 
+3 Add a .gitignore if you haven’t yet, so you don’t push things like vendor/, .env, or node_modules/.
+
