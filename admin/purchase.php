@@ -6,7 +6,7 @@
                         reference,
                         company,
                         warehouse,
-                        supplier,
+                        supplier_name,
                         grand_total,
                         paid,
                         (grand_total - IFNULL(paid, 0)) AS balance,
@@ -108,7 +108,7 @@
                                         <td class="text-center"><?= $pur['reference'] ?></td>
                                         <td class="text-start"><?= $pur['company'] ?></td>
                                         <td class="text-start"><?= $pur['warehouse'] ?></td>
-                                        <td class="text-start"><?= $pur['supplier'] ?></td>
+                                        <td class="text-start"><?= $pur['supplier_name'] ?></td>
                                         <td class="text-end"><?= $formatter->formatCurrency($pur['grand_total'], $currencyCode); ?></td>
                                         <td class="text-end"><?= $formatter->formatCurrency($pur['paid'], $currencyCode); ?></td>
                                         <td class="text-end"><?= $formatter->formatCurrency($pur['balance'], $currencyCode); ?></td>
@@ -141,7 +141,7 @@
                                     $no++;
                                     } 
                                 } else { ?>
-                                    <tr><td colspan='4' class='text-center text-danger'>No products found.</td></tr>
+                                    <tr><td colspan='11' class='text-center text-danger'>No purchase found.</td></tr>
                                 <?php } ?>
                             </tbody>
                             <tfoot>

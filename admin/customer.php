@@ -1,8 +1,8 @@
 <?php
     require_once 'include/dbconnection.php';
 
-    // Add supplier
-    if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addSupplier']) == TRUE){
+    // Add customer
+    if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addCustomer']) == TRUE){
         $code = $_POST['code'];
         $name = $_POST['name'];
         $company = $_POST['company'];
@@ -12,7 +12,7 @@
         $description = $_POST['description'];
         $created_date = $_POST['created_date'];
 
-        $stmt = $conn->prepare("INSERT INTO supplier 
+        $stmt = $conn->prepare("INSERT INTO customer 
                                 (
                                     code, 
                                     name, 
@@ -36,19 +36,19 @@
                         );
 
         if ($stmt->execute()) {
-            $_SESSION['message'] = 'Supplier added Successfully!';
+            $_SESSION['message'] = 'Customer added Successfully!';
             $_SESSION['message_type'] = 'success';
         } else {
-            $_SESSION['message'] = 'Supplier added Unsuccessfully! Error: ' . $stmt->error;
+            $_SESSION['message'] = 'Customer added Unsuccessfully! Error: ' . $stmt->error;
             $_SESSION['message_type'] = 'danger';
         }
         $stmt->close();
-        header('Location: supplier.php');
+        header('Location: customer.php');
         exit();
     }
 
     // Update user
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateSupplier']) == TRUE) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCustomer']) == TRUE) {
         $update_id = $_POST['update_id'];
         $code = $_POST['code'];
         $name = $_POST['name'];
@@ -59,7 +59,7 @@
         $description = $_POST['description'];
         $created_date = $_POST['created_date'];
 
-        $stmt = $conn->prepare("UPDATE supplier SET 
+        $stmt = $conn->prepare("UPDATE customer SET 
                                     code = ?, 
                                     name = ?, 
                                     company = ?, 
@@ -83,37 +83,37 @@
                         );
         
         if ($stmt->execute()) {
-            $_SESSION['message'] = 'Supplier updated Successfully!';
+            $_SESSION['message'] = 'Customer updated Successfully!';
             $_SESSION['message_type'] = 'success';
         } else {
-            $_SESSION['message'] = 'Supplier update Unsuccessful! Error: ' . $stmt->error;
+            $_SESSION['message'] = 'Customer update Unsuccessful! Error: ' . $stmt->error;
             $_SESSION['message_type'] = 'danger';
         }
         $stmt->close();
     
-        header('Location: supplier.php');
+        header('Location: customer.php');
         exit();
     }
 
     // Delete Product
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete']) == TRUE) {
         $delete_id = $_POST['delete_id'];
-        $stmt = $conn->prepare("DELETE FROM supplier WHERE id = ?");
+        $stmt = $conn->prepare("DELETE FROM customer WHERE id = ?");
         $stmt->bind_param("i", $delete_id);
     
         if ($stmt->execute()) {
-            $_SESSION['message'] = 'Supplier deleted successfully!';
+            $_SESSION['message'] = 'Customer deleted successfully!';
             $_SESSION['message_type'] = 'success';
         } else {
-            $_SESSION['message'] = 'Failed to delete Supplier!';
+            $_SESSION['message'] = 'Failed to delete Customer!';
             $_SESSION['message_type'] = 'danger';
         }
         $stmt->close();
-        header('Location: supplier.php');
+        header('Location: customer.php');
         exit();
     }
 
-    $supplier = $conn->query("SELECT * FROM supplier ORDER BY created_date DESC");
+    $customer = $conn->query("SELECT * FROM customer ORDER BY created_date DESC");
 
     $conn->close();
 ?>
@@ -137,14 +137,14 @@
                 <div class="bg-light text-center rounded p-4">
                     <div class="d-flex align-items-center justify-content-between mb-0">
                         <button type="button" class="btn btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#add">
-                            <i class="fas fa-plus"></i> Add Supplier
+                            <i class="fas fa-plus"></i> Add Customer
                         </button>
-                        <h5 class="mb-0 fw-bold text-title">Supplier List</h5>
+                        <h5 class="mb-0 fw-bold text-title">Customer List</h5>
                     </div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div></div>
                         <div class="input-group w-25">
-                            <input type="text" id="supplierSearch" class="form-control w-50" placeholder="Search.....">
+                            <input type="text" id="customerSearch" class="form-control w-50" placeholder="Search.....">
                         </div>
                     </div>
                     <?php if(isset($_SESSION['message'])){?>
@@ -172,9 +172,9 @@
                             </thead>
                             <tbody class="text-title">
                                 <?php
-                                    if ($supplier->num_rows > 0) {
+                                    if ($customer->num_rows > 0) {
                                         $no = 1;
-                                        while($row = $supplier->fetch_assoc()) {
+                                        while($row = $customer->fetch_assoc()) {
                                 ?>
                                 <tr>
                                     <td class="text-center"><?= $no ?></td>
@@ -198,7 +198,7 @@
                                             data-address="<?= $row['address'] ?>" 
                                             data-description="<?= $row['description'] ?>" 
                                             data-bs-toggle="modal" 
-                                            data-bs-target="#EditSupplier">
+                                            data-bs-target="#EditCustomer">
                                             <i class="bi bi-pencil-square cursor-pointer fs-4"></i>
                                         </a>
                                         <a class="delete-btn" data-id="<?= $row['id'] ?>" data-bs-toggle="modal" data-bs-target="#delete">
@@ -222,15 +222,15 @@
 		<?php include "include/foot.php"?>
 	</div>
 
-    <!-- Add Supplier -->
+    <!-- Add Customer -->
     <div class="modal fade" id="add" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addModalLabel">Add Supplier</h5>
+                    <h5 class="modal-title" id="addModalLabel">Add Customer</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="supplier.php" method="post" enctype="multipart/form-data">
+                <form action="customer.php" method="post" enctype="multipart/form-data">
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -285,19 +285,19 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <input type="submit" name="addSupplier" value="Submit" class="btn btn-primary">
+                        <input type="submit" name="addCustomer" value="Submit" class="btn btn-primary">
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Edit Supplier -->
-    <div class="modal fade" id="EditSupplier" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <!-- Edit Customer -->
+    <div class="modal fade" id="EditCustomer" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Supplier</h5>
+                    <h5 class="modal-title" id="editModalLabel">Edit Customer</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="" method="post">
@@ -356,7 +356,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" name="updateSupplier" class="btn btn-primary">Update</button>
+                        <button type="submit" name="updateCustomer" class="btn btn-primary">Update</button>
                     </div>
                 </form>
             </div>
@@ -414,8 +414,8 @@
                 $('#delete_id').val(id);
             });
 
-            // Category Search
-            $('#supplierSearch').on('keyup', function() {
+            // customer Search
+            $('#customerSearch').on('keyup', function() {
                 var category = $(this).val().toLowerCase();
                 $('table tbody tr').filter(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(category) > -1)

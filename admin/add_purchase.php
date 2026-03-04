@@ -4,7 +4,6 @@
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addpurchase'])) {
         $create_date = $_POST['create_date'];
         $reference = $_POST['reference'];
-        $supplier = $_POST['supplier'];
         $company = $_POST['company'];
         $warehouse = $_POST['warehouse'];
         $rate = (float)($_POST['exchange_rate'] ?? 0);
@@ -12,6 +11,15 @@
         $discount = (float)($_POST['discount'] ?? 0);
         $shipping = (float)($_POST['shipping'] ?? 0);
         $note = $_POST['note'];
+
+        // supplier id and name
+        $supplier_id = (int)$_POST['supplier'];
+        $stmtSupplier = $conn->prepare("SELECT name FROM supplier WHERE id = ?");
+        $stmtSupplier->bind_param("i", $supplier_id);
+        $stmtSupplier->execute();
+        $stmtSupplier->bind_result($supplier_name);
+        $stmtSupplier->fetch();
+        $stmtSupplier->close();
 
         // product arrays from the dynamic table
         $product_ids = $_POST['product_id'] ?? [];
@@ -103,6 +111,7 @@
     $sql = "SELECT * FROM categories ORDER BY created_date DESC";
     $result = $conn->query($sql);
     $product = $conn->query('SELECT id, code, name, unit, cost FROM products ORDER BY name ASC');
+    $suppliers = $conn->query('SELECT id, name FROM supplier');
 
     $conn->close();
 ?>
@@ -148,7 +157,13 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="supplier">Supplier</label>
-                                    <input type="text" class="form-control" id="supplier" name="supplier">
+                                    <select id="supplierSelect" class="form-select" name="supplier">
+                                        <?php
+                                            while($sup = $suppliers->fetch_assoc()) {
+                                                echo "<option value='" . $sup['id'] . "'>" . htmlspecialchars($sup['name']) . "</option>";
+                                            }
+                                        ?>
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
@@ -265,6 +280,13 @@
                     placeholder: '-- Choose a category --',
                     allowClear: true,               // shows an X to clear selection
                     width: '100%'                   // full width of the container
+                });
+
+                $('#supplierSelect').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: '-- Choose a supplier --',
+                    allowClear: true,
+                    width: '100%'
                 });
             });
 
