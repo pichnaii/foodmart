@@ -85,3 +85,30 @@ Quick Tips
 2 Check which branch you are on: git branch 
 3 Add a .gitignore if you haven’t yet, so you don’t push things like vendor/, .env, or node_modules/.
 
+
+
+// database create table cutomer 
+CREATE TABLE `customer` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `company` VARCHAR(100),
+    `phone` VARCHAR(30),
+    `email` VARCHAR(60),
+    `address` VARCHAR(255),
+    `description` VARCHAR(255),
+    `created_date` DATE
+);
+
+// database create table supplier 
+CREATE TABLE `supplier` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `company` VARCHAR(100),
+    `phone` VARCHAR(30),
+    `email` VARCHAR(60),
+    `address` VARCHAR(255),
+    `description` VARCHAR(255),
+    `created_date` DATE
+);

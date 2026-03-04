@@ -15,7 +15,23 @@
                         ORDER BY create_date DESC
                     ");
     $purchase = $conn->query($purchase_data);
-    $conn->close();
+
+    // Currency formatter (define once, not inside the loop)
+    $currencyCode = '$';
+    if (!function_exists('format_currency')) {
+        if (class_exists('NumberFormatter')) {
+            $numFormatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+            function format_currency($amount, $currencyCode = '$') {
+                global $numFormatter;
+                return $numFormatter->formatCurrency($amount ?? 0, $currencyCode);
+            }
+        } else {
+            function format_currency($amount, $currencyCode = '$') {
+                $amt = number_format((float)($amount ?? 0), 2);
+                return $currencyCode . ' ' . $amt;
+            }
+        }
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,11 +99,9 @@
                                             $total_paid += $pur['paid'];
                                             $total_balance += $pur['balance'];
 
-                                            $currencyCode = 'USD';
-                                            $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
-                                            $grandtotal = $formatter->formatCurrency($g_total, $currencyCode);
-                                            $totalpaid = $formatter->formatCurrency($total_paid, $currencyCode);
-                                            $totalbalance = $formatter->formatCurrency($total_balance, $currencyCode);
+                                            $grandtotal = format_currency($g_total, $currencyCode);
+                                            $totalpaid = format_currency($total_paid, $currencyCode);
+                                            $totalbalance = format_currency($total_balance, $currencyCode);
 
                                             $payment_status_name = '' ;
                                             $payment_status_color = '';
@@ -109,27 +123,15 @@
                                         <td class="text-start"><?= $pur['company'] ?></td>
                                         <td class="text-start"><?= $pur['warehouse'] ?></td>
                                         <td class="text-start"><?= $pur['supplier_name'] ?></td>
-                                        <td class="text-end"><?= $formatter->formatCurrency($pur['grand_total'], $currencyCode); ?></td>
-                                        <td class="text-end"><?= $formatter->formatCurrency($pur['paid'], $currencyCode); ?></td>
-                                        <td class="text-end"><?= $formatter->formatCurrency($pur['balance'], $currencyCode); ?></td>
+                                        <td class="text-end"><?= format_currency($pur['grand_total'], $currencyCode); ?></td>
+                                        <td class="text-end"><?= format_currency($pur['paid'], $currencyCode); ?></td>
+                                        <td class="text-end"><?= format_currency($pur['balance'], $currencyCode); ?></td>
                                         <td class="text-center"><span class="<?= $payment_status_color ?>"><?= $payment_status_name ?></span></td>
                                         <td class="text-center">
-                                            <a class="edit-btn" 
-                                                data-id="<?= $pur['id'] ?>" 
-                                                data-code="<?= $pur['code'] ?>" 
-                                                data-name="<?= $pur['name'] ?>" 
-                                                data-created_date="<?= $pur['created_date'] ?>" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#EditUser">
+                                            <a class="edit-btn">
                                                 <i class="bi bi-plus-circle-fill cursor-pointer fs-4"></i>
                                             </a>
-                                            <a class="edit-btn" 
-                                                data-id="<?= $pur['id'] ?>" 
-                                                data-code="<?= $pur['code'] ?>" 
-                                                data-name="<?= $pur['name'] ?>" 
-                                                data-created_date="<?= $pur['created_date'] ?>" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#EditUser">
+                                            <a class="edit-btn">
                                                 <i class="bi bi-pencil-square cursor-pointer fs-4"></i>
                                             </a>
                                             <a class="delete-btn" data-id="<?= $pur['id'] ?>" data-bs-toggle="modal" data-bs-target="#delete">
@@ -176,7 +178,7 @@
                         <strong>Supplier:</strong> <span id="modal_purchase_supplier"></span><br>
                         <strong>Company:</strong> <span id="modal_purchase_company"></span><br>
                     </div>
-                    <div class="text-center fs-4 fw-bold">Purchase Invoice / វិក្កយបត្របញ្ជាទិញ</div>
+                    <div class="text-center fs-4 fw-bold" style="font-family: 'Khmer OS Battambang', sans-serif;">Purchase Invoice / វិក្កយបត្របញ្ជាទិញ</div>
                     <hr style="border: 3px solid #000000 !important;">
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered" id="modal_items_table">
@@ -194,8 +196,12 @@
                             <tbody id="modal_items_body"></tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="6" class="text-end fw-bold">Grand Total</td>
-                                    <td class="text-end fw-bold" id="modal_grand_total"></td>
+                                    <td colspan="6" class="text-end fw-bold">Grand Total USD</td>
+                                    <td class="text-end fw-bold" id="modal_grand_total_usd"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="text-end fw-bold">Grand Total KHR</td>
+                                    <td class="text-end fw-bold" id="modal_grand_total_khr"></td>
                                 </tr>
                                 <tr>
                                     <td colspan="6" class="text-end fw-bold">Paid</td>
@@ -273,7 +279,7 @@
                     $('#modal_purchase_id').text(p.id);
                     $('#modal_purchase_ref').text(p.reference || '');
                     $('#modal_purchase_date').text(new Date(p.create_date).toLocaleDateString());
-                    $('#modal_purchase_supplier').text(p.supplier || '');
+                    $('#modal_purchase_supplier').text(p.supplier_name || '');
                     $('#modal_purchase_company').text(p.company || '');
 
                     // populate items
@@ -295,7 +301,8 @@
                             '</tr>';
                         $body.append(row);
                     });
-                    $('#modal_grand_total').text('$ ' + (parseFloat(p.grand_total) || grand).toFixed(2));
+                    $('#modal_grand_total_usd').text('$ ' + (parseFloat(p.grand_total) || grand).toFixed(2));
+                    $('#modal_grand_total_khr').text('៛ ' + (parseFloat(p.grand_total * p.rate) || grand * p.rate).toFixed(2));
 
                     var purchaseModal = new bootstrap.Modal(document.getElementById('purchaseModal'));
                     purchaseModal.show();
