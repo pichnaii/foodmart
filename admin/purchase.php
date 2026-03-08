@@ -8,6 +8,7 @@
                         warehouse,
                         supplier_name,
                         grand_total,
+                        rate,
                         paid,
                         (grand_total - IFNULL(paid, 0)) AS balance,
                         payment_status 
@@ -91,6 +92,8 @@
                                 <?php
                                     if ($purchase->num_rows > 0) {
                                         $no = 1;
+                                        $currencyUSD = '$';
+                                        $currencyKHR = '៛';
                                         $g_total = 0;
                                         $total_paid = 0;
                                         $total_balance = 0;
@@ -99,9 +102,13 @@
                                             $total_paid += $pur['paid'];
                                             $total_balance += $pur['balance'];
 
-                                            $grandtotal = format_currency($g_total, $currencyCode);
-                                            $totalpaid = format_currency($total_paid, $currencyCode);
-                                            $totalbalance = format_currency($total_balance, $currencyCode);
+                                            $grandtotal = $g_total;
+                                            $totalpaid = $total_paid;
+                                            $totalbalance = $total_balance;
+
+                                            $grandtotal_khr = $g_total * $pur['rate'];
+                                            $totalpaid_khr = $total_paid * $pur['rate'];
+                                            $totalbalance_khr = $total_balance * $pur['rate'];
 
                                             $payment_status_name = '' ;
                                             $payment_status_color = '';
@@ -123,9 +130,9 @@
                                         <td class="text-start"><?= $pur['company'] ?></td>
                                         <td class="text-start"><?= $pur['warehouse'] ?></td>
                                         <td class="text-start"><?= $pur['supplier_name'] ?></td>
-                                        <td class="text-end"><?= format_currency($pur['grand_total'], $currencyCode); ?></td>
-                                        <td class="text-end"><?= format_currency($pur['paid'], $currencyCode); ?></td>
-                                        <td class="text-end"><?= format_currency($pur['balance'], $currencyCode); ?></td>
+                                        <td class="text-end"><?= formatcurrency_usd($pur['grand_total']) ?></td>
+                                        <td class="text-end"><?= formatcurrency_usd($pur['paid']) ?></td>
+                                        <td class="text-end"><?= formatcurrency_usd($pur['balance']) ?></td>
                                         <td class="text-center"><span class="<?= $payment_status_color ?>"><?= $payment_status_name ?></span></td>
                                         <td class="text-center">
                                             <a class="edit-btn">
@@ -148,10 +155,19 @@
                             </tbody>
                             <tfoot>
                                 <tr class="bg-light">
-                                    <td colspan="6" class="text-end fw-bold">Totals</td>
-                                    <td class="text-end"><strong><?= $grandtotal ?></strong></td>
-                                    <td class="text-end"><strong><?= $totalpaid ?></strong></td>
-                                    <td class="text-end"><strong><?= $totalbalance ?></strong></td>
+                                    <td colspan="6" class="text-end fw-bold">Totals USD </td>
+                                    <td class="text-end"><strong><?= formatcurrency_usd($grandtotal) ?></strong></td>
+                                    <td class="text-end"><strong><?= formatcurrency_usd($totalpaid) ?></strong></td>
+                                    <td class="text-end"><strong><?= formatcurrency_usd($totalbalance) ?></strong></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr class="bg-light">
+                                    <td colspan="6" class="text-end fw-bold">Totals KHR </td>
+                                    <td class="text-end"><strong><?= formatcurrency_khr($grandtotal_khr) ?></strong></td>
+                                    <td class="text-end"><strong><?= formatcurrency_khr($totalpaid_khr) ?></strong></td>
+                                    <td class="text-end"><strong><?= formatcurrency_khr($totalbalance_khr) ?></strong></td>
+                                    <td></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -163,6 +179,7 @@
 		</div>
 		<?php include "include/foot.php"?>
 	</div>
+    
     <!-- Purchase Details Modal -->
     <div class="modal fade" id="purchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">

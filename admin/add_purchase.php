@@ -48,7 +48,7 @@
         // Use transaction: insert into purchases then purchase_items
         $conn->begin_transaction();
 
-        $stmt = $conn->prepare("INSERT INTO purchases (create_date, reference, supplier, company, warehouse, rate, tax, discount, shipping, note, grand_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO purchases (create_date, reference, supplier_id, supplier_name, company, warehouse, rate, tax, discount, shipping, note, grand_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if (!$stmt) {
             $conn->rollback();
             $_SESSION['message'] = 'Prepare failed (purchases): ' . $conn->error;
@@ -57,7 +57,7 @@
             exit();
         }
 
-        $stmt->bind_param("sssssddddsd", $create_date, $reference, $supplier, $company, $warehouse, $rate, $tax, $discount, $shipping, $note, $grand_total);
+        $stmt->bind_param("ssisssddddsd", $create_date, $reference, $supplier_id, $supplier_name, $company, $warehouse, $rate, $tax, $discount, $shipping, $note, $grand_total);
         if (!$stmt->execute()) {
             $stmt->close();
             $conn->rollback();
