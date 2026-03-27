@@ -135,7 +135,7 @@
                                         <td class="text-end"><?= formatcurrency_usd($pur['balance']) ?></td>
                                         <td class="text-center"><span class="<?= $payment_status_color ?>"><?= $payment_status_name ?></span></td>
                                         <td class="text-center">
-                                            <a class="edit-btn">
+                                            <a href="add_purchase_payment.php" class="edit-btn">
                                                 <i class="bi bi-plus-circle-fill cursor-pointer fs-4"></i>
                                             </a>
                                             <a class="edit-btn">

@@ -2,7 +2,7 @@
     require_once 'include/dbconnection.php';
     header('Content-Type: application/json; charset=utf-8');
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_id'])) {
-        
+
         $purchase_id = (int)$_POST['purchase_id'];
         // fetch purchase details
         $stmt = $conn->prepare("SELECT id,
@@ -14,7 +14,7 @@
                                     rate, 
                                     grand_total, 
                                     paid, 
-                                    (grand_total - IFNULL(paid,0)) AS balance, 
+                                    (grand_total - IFNULL(paid,0)) AS balance,
                                     payment_status 
                                     FROM purchases 
                                     WHERE id = ?
@@ -61,7 +61,6 @@
         echo json_encode(['success' => true, 'purchase' => $purchase, 'items' => $items]);
         exit();
     }
-
     echo json_encode(['success' => false, 'error' => 'Invalid request']);
     exit();
 ?>
