@@ -44,9 +44,15 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="my-2"><a href="#" class="fs-5"><i class="bi bi-people-fill pe-1"></i>Customer</a></div>
-                            <div class="my-2"><a href="#" class="fs-5"><i class="bi bi-person-circle pe-1"></i>Supplier</a></div>
-                            <div class="my-2"><a href="#" class="fs-5"><i class="bi bi-house-door-fill pe-1"></i>Warehouse</a></div>
+                            <div class="my-2">
+                                <a href="company.php" class="fs-5"><i class="fa fa-building pe-1"></i>Company</a>
+                            </div>
+                            <div class="my-2">
+                                <a href="#" class="fs-5"><i class="bi bi-person-circle pe-1"></i>Supplier</a>
+                            </div>
+                            <div class="my-2">
+                                <a href="#" class="fs-5"><i class="bi bi-house-door-fill pe-1"></i>Warehouse</a>
+                            </div>
                         </div>
                     </div>
                 </div>

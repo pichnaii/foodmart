@@ -112,3 +112,41 @@ CREATE TABLE `supplier` (
     `description` VARCHAR(255),
     `created_date` DATE
 );
+
+// database create table currency 
+CREATE TABLE `currency` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `base_currency` VARCHAR(50) NOT NULL,
+    `currency_code` VARCHAR(100) NOT NULL,
+    `currency_name` VARCHAR(100),
+    `currency_symbol` VARCHAR(30),
+    `exchange_rate` VARCHAR(60),
+    `created_date` DATE
+);
+
+// database create table warehouse 
+CREATE TABLE `warehouse` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `local_name` VARCHAR(100),
+    `address` LONGTEXT NOT NULL,
+    `note` LONGTEXT NOT NULL,
+    `created_date` DATE
+);
+
+// database create table company 
+CREATE TABLE `company` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `local_name` VARCHAR(100),
+    `phone` VARCHAR(100),
+    `email` VARCHAR(100),
+    `vat` VARCHAR(100),
+    `logo` VARCHAR(100),
+    `local_address` LONGTEXT NOT NULL,
+    `address` LONGTEXT NOT NULL,
+    `note` LONGTEXT NOT NULL,
+    `created_date` DATE
+);

@@ -4,14 +4,30 @@
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addpurchase'])) {
         $create_date = $_POST['create_date'];
         $reference = $_POST['reference'];
-        $company = $_POST['company'];
-        $warehouse = $_POST['warehouse'];
         $rate = (float)($_POST['exchange_rate'] ?? 0);
         $tax = (float)($_POST['tax'] ?? 0);
         $discount = (float)($_POST['discount'] ?? 0);
         $shipping = (float)($_POST['shipping'] ?? 0);
         $note = $_POST['note'];
 
+        // company id and name
+        $company_id = (int)$_POST['company'];
+        $stmtCompany = $conn->prepare("SELECT name FROM company WHERE id = ?");
+        $stmtCompany->bind_param("i", $company_id);
+        $stmtCompany->execute();
+        $stmtCompany->bind_result($company);
+        $stmtCompany->fetch();
+        $stmtCompany->close();
+
+        // warehouse id and name
+        $warehouse_id = (int)$_POST['warehouse'];
+        $stmtWarehouse = $conn->prepare("SELECT name FROM warehouse WHERE id = ?");
+        $stmtWarehouse->bind_param("i", $warehouse_id);
+        $stmtWarehouse->execute();
+        $stmtWarehouse->bind_result($warehouse);
+        $stmtWarehouse->fetch();
+        $stmtWarehouse->close();
+        
         // supplier id and name
         $supplier_id = (int)$_POST['supplier'];
         $stmtSupplier = $conn->prepare("SELECT name FROM supplier WHERE id = ?");
@@ -48,7 +64,22 @@
         // Use transaction: insert into purchases then purchase_items
         $conn->begin_transaction();
 
-        $stmt = $conn->prepare("INSERT INTO purchases (create_date, reference, supplier_id, supplier_name, company, warehouse, rate, tax, discount, shipping, note, grand_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO purchases 
+                                (
+                                    create_date, 
+                                    reference, 
+                                    supplier_id, 
+                                    supplier_name, 
+                                    company, 
+                                    warehouse, 
+                                    rate, 
+                                    tax, 
+                                    discount, 
+                                    shipping, 
+                                    note, 
+                                    grand_total
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ");
         if (!$stmt) {
             $conn->rollback();
             $_SESSION['message'] = 'Prepare failed (purchases): ' . $conn->error;
@@ -57,7 +88,20 @@
             exit();
         }
 
-        $stmt->bind_param("ssisssddddsd", $create_date, $reference, $supplier_id, $supplier_name, $company, $warehouse, $rate, $tax, $discount, $shipping, $note, $grand_total);
+        $stmt->bind_param("ssisssddddsd", 
+                            $create_date, 
+                            $reference, 
+                            $supplier_id, 
+                            $supplier_name, 
+                            $company, 
+                            $warehouse, 
+                            $rate, 
+                            $tax, 
+                            $discount, 
+                            $shipping, 
+                            $note, 
+                            $grand_total
+                        );
         if (!$stmt->execute()) {
             $stmt->close();
             $conn->rollback();
@@ -70,7 +114,16 @@
         $stmt->close();
 
         // Prepare purchase_items insert
-        $itemStmt = $conn->prepare("INSERT INTO purchase_items (purchase_id, product_id, product_code, product_name, unit, cost, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $itemStmt = $conn->prepare("INSERT INTO purchase_items 
+                                    (
+                                        purchase_id, 
+                                        product_id, 
+                                        product_code, 
+                                        product_name, 
+                                        unit, 
+                                        cost, 
+                                        quantity
+                                    ) VALUES (?, ?, ?, ?, ?, ?, ?)");
         if (!$itemStmt) {
             $conn->rollback();
             $_SESSION['message'] = 'Prepare failed (items): ' . $conn->error;
@@ -111,7 +164,10 @@
     $sql = "SELECT * FROM categories ORDER BY created_date DESC";
     $result = $conn->query($sql);
     $product = $conn->query('SELECT id, code, name, unit, cost FROM products ORDER BY name ASC');
+    $company = $conn->query('SELECT id, name FROM company');
     $suppliers = $conn->query('SELECT id, name FROM supplier');
+    $warehouse = $conn->query('SELECT id, name FROM warehouse');
+    $currencies = $conn->query('SELECT id, exchange_rate FROM currency WHERE currency_code != "USD"')->fetch_assoc();
 
     $conn->close();
 ?>
@@ -151,7 +207,7 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="reference">Reference</label>
-                                    <input type="text" class="form-control" id="reference" name="reference">
+                                    <input type="text" class="form-control" id="reference" name="reference" value="PU/FBS/<?= date('Y')?>/000001">
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
@@ -169,19 +225,31 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="company">Company</label>
-                                    <input type="text" class="form-control" id="company" name="company">
+                                    <select id="companySelect" class="form-select" name="company">
+                                        <?php
+                                            while($com = $company->fetch_assoc()) {
+                                                echo "<option value='" . $com['id'] . "'>" . htmlspecialchars($com['name']) . "</option>";
+                                            }
+                                        ?>
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="warehouse">Warehouse</label>
-                                    <input type="text" class="form-control" id="warehouse" name="warehouse">
+                                    <select id="warehouseSelect" class="form-select" name="warehouse">
+                                        <?php
+                                            while($war = $warehouse->fetch_assoc()) {
+                                                echo "<option value='" . $war['id'] . "'>" . htmlspecialchars($war['name']) . "</option>";
+                                            }
+                                        ?>
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="exchange_rate">Exchange Rate</label>
-                                    <input type="text" class="form-control" id="exchange_rate" name="exchange_rate">
+                                    <input type="text" class="form-control" id="exchange_rate" name="exchange_rate" value="<?= $currencies['exchange_rate'] ?>">
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -273,11 +341,10 @@
 	</div>
     <script>
         $(document).ready(function() {
-            // Initialize Select2
             $(document).ready(function () {
                 $('#productSelect').select2({
                     theme: 'bootstrap-5',           // matches Bootstrap styling
-                    placeholder: '-- Choose a category --',
+                    placeholder: '-- Choose a products --',
                     allowClear: true,               // shows an X to clear selection
                     width: '100%'                   // full width of the container
                 });
@@ -285,6 +352,20 @@
                 $('#supplierSelect').select2({
                     theme: 'bootstrap-5',
                     placeholder: '-- Choose a supplier --',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                $('#warehouseSelect').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: '-- Choose a warehouse --',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                $('#companySelect').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: '-- Choose a company --',
                     allowClear: true,
                     width: '100%'
                 });
@@ -327,15 +408,6 @@
 
                 // compute row number
                 var idx = $('tbody.text-title tr').length + 1;
-
-                // var row = '<tr id="row-' + id + '">' +
-                //             '<td class="text-center row-no">' + idx + '</td>' +
-                //             '<td>' + $('<div>').text(code + ' - ' + name).html() + '</td>' +
-                //             '<td class="text-center">' + $('<div>').text(unit).html() + '</td>' +
-                //             '<td class="text-center"><input type="text" class="form-control text-center cost-input" name="cost[]" value="' + cost.toFixed(2) + '" step="0.01" disabled></td>' +
-                //             '<td class="text-center"><input type="text" class="form-control text-center qty-input" name="qty[]" value="1" min="1" data-id="' + id + '"></td>' +
-                //             '<td class="text-center"><a class="remove-row"><i class="bi bi-trash text-danger cursor-pointer fs-4"></i></a></td>' +
-                //         '</tr>';
                 var row = '<tr id="row-' + id + '">' +
                             '<td class="text-center row-no">' + idx + '</td>' +
                             '<td>' + $('<div>').text(code + ' - ' + name).html() + 
