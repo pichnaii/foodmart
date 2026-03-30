@@ -150,3 +150,19 @@ CREATE TABLE `company` (
     `note` LONGTEXT NOT NULL,
     `created_date` DATE
 );
+
+-- Permissions table (defines all available permissions)
+CREATE TABLE permissions (
+    id   INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,  -- e.g. 'warehouse_edit'
+    label VARCHAR(150)                  -- e.g. 'Can Edit Warehouse'
+);
+
+CREATE TABLE user_permissions (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT NOT NULL,
+    permission_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_perm (user_id, permission_id)
+);

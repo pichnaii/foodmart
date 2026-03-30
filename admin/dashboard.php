@@ -23,7 +23,7 @@
     <div class="container-fluid pt-4 px-4">
         <?php if(isset($_SESSION['message'])){ ?>
             <div class="alert alert-<?=$_SESSION['message_type']?> alert-dismissible fade show" id="message" role="alert">
-                Welcome, <?php echo htmlspecialchars($_SESSION['message']); ?>...!
+                <?php echo htmlspecialchars($_SESSION['message']); ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>

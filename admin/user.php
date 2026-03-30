@@ -10,6 +10,19 @@
         die("Connection failed: " . $conn->connect_error);
     }
 
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: login.php');
+        exit();
+    }
+
+    // Authorization
+    if ($_SESSION['user_role'] !== 'admin') {
+        $_SESSION['message'] = 'Access denied...!';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: index.php');
+        exit();
+    }
+
     // Add user
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addUser']) == TRUE){
         $user_role = $_POST['user_role'];

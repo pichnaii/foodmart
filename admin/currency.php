@@ -176,18 +176,20 @@
                                     <td class="text-center"><?= $row['currency_symbol'] ?></td>
                                     <td class="text-center"><?= $row['exchange_rate'] ?></td>
                                     <td class="text-center">
-                                        <a class="edit-btn" 
-                                            data-id="<?= $row['id'] ?>" 
-                                            data-created_date="<?= $row['created_date'] ?>" 
-                                            data-base_currency="<?= $row['base_currency'] ?>" 
-                                            data-currency_code="<?= $row['currency_code'] ?>" 
-                                            data-currency_name="<?= $row['currency_name'] ?>" 
-                                            data-currency_symbol="<?= $row['currency_symbol'] ?>" 
-                                            data-exchange_rate="<?= $row['exchange_rate'] ?>" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#EditCurrency">
-                                            <i class="bi bi-pencil-square cursor-pointer fs-4"></i>
-                                        </a>
+                                        <?php if ($_SESSION['user_role'] === 'admin') { ?>
+                                            <a class="edit-btn" 
+                                                data-id="<?= $row['id'] ?>" 
+                                                data-created_date="<?= $row['created_date'] ?>" 
+                                                data-base_currency="<?= $row['base_currency'] ?>" 
+                                                data-currency_code="<?= $row['currency_code'] ?>" 
+                                                data-currency_name="<?= $row['currency_name'] ?>" 
+                                                data-currency_symbol="<?= $row['currency_symbol'] ?>" 
+                                                data-exchange_rate="<?= $row['exchange_rate'] ?>" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#EditCurrency">
+                                                <i class="bi bi-pencil-square cursor-pointer fs-4"></i>
+                                            </a>
+                                        <?php } ?>
                                         <a class="delete-btn" data-id="<?= $row['id'] ?>" data-bs-toggle="modal" data-bs-target="#delete">
                                             <i class="bi bi-trash text-danger cursor-pointer fs-4"></i>
                                         </a>
