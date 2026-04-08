@@ -166,3 +166,13 @@ CREATE TABLE user_permissions (
     FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_perm (user_id, permission_id)
 );
+
+CREATE TABLE user_roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    updated_date DATE,
+    created_date DATE
+    description TEXT NULL,
+    status INT(11);
+)

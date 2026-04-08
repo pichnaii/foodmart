@@ -302,7 +302,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="logo">Logo</label>
-                                    <input type="file" class="form-control" name="logo">
+                                    <input type="file" class="form-control" name="logo" accept="image/*">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -397,7 +397,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="logo">Logo</label>
-                                    <input type="file" class="form-control" id="edit_logo" name="logo">
+                                    <input type="file" class="form-control" id="edit_logo" name="logo" accept="image/*">
                                 </div>
                             </div>
                             <div class="col-md-6">

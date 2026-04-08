@@ -54,17 +54,12 @@
                 <a href="purchase.php" class="nav-item nav-link <?php echo $current_page == 'purchase.php' ? 'active' : ''; ?>">
                     <i class="fa fa-money-bill-wave me-2"></i>Purchase
                 </a>
-            <?php } if ($_SESSION['user_role'] == 'admin' || ($_SESSION['user_role'] == 'accounting' && $config_page['category'] == 1)) { ?>
-                <a href="category.php" class="nav-item nav-link <?php echo $current_page == 'category.php' ? 'active' : ''; ?>">
-                    <i class="fa fa-th-large me-2"></i>Category
-                </a>
-            <?php } if ($_SESSION['user_role'] == 'admin' || ($_SESSION['user_role'] == 'accounting' && $config_page['page'] == 1)) { ?>
-                <a href="unit.php" class="nav-item nav-link <?php echo $current_page == 'unit.php' ? 'active' : ''; ?>">
-                    <i class="fa fa-heartbeat me-2"></i>Unit
-                </a>
             <?php } if ($_SESSION['user_role'] == 'admin' || ($_SESSION['user_role'] == 'accounting' && $config_page['user'] == 1)) { ?>
                 <a href="user.php" class="nav-item nav-link <?php echo $current_page == 'user.php' ? 'active' : ''; ?>">
                     <i class="fa fa-user-circle me-2"></i>User
+                </a>
+                <a href="user_permission.php" class="nav-item nav-link <?php echo $current_page == 'user_permission.php' ? 'active' : ''; ?>">
+                    <i class="fa fa-user-circle me-2"></i>User Permission
                 </a>
             <?php } if ($_SESSION['user_role'] == 'admin') { ?>
                 <a href="configuration.php" class="nav-item nav-link <?php echo $current_page == 'configuration.php' ? 'active' : ''; ?>">
