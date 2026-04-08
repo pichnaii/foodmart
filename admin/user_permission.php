@@ -65,9 +65,9 @@
                         <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
                     <?php } ?>
                     <div class="table-responsive">
-                        <table class="table text-start align-middle table-bordered table-hover mb-0">
+                        <table class="table align-middle mb-0">
                             <thead>
-                                <tr class="bg-secondary text-light text-center">
+                                <tr>
                                     <th>No</th>
                                     <th>User Image</th>
                                     <th>Code</th>
@@ -101,7 +101,7 @@
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-center">
-                                                <a href="permission.php" class="edit-btn">
+                                                <a href="permission.php?id=<?= $row['id'] ?>" class="edit-btn">
                                                     <i class="bi bi-eye cursor-pointer fs-4 text-title"></i>
                                                 </a>
                                                 <a href="edit_user_role.php?id=<?= $row['id'] ?>" class="edit-btn">

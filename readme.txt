@@ -172,7 +172,7 @@ CREATE TABLE user_roles (
     code VARCHAR(50) NOT NULL,
     name VARCHAR(255) NOT NULL UNIQUE,
     updated_date DATE,
-    created_date DATE
+    created_date DATE,
     description TEXT NULL,
-    status INT(11);
+    status INT(11)
 )
