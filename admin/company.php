@@ -61,82 +61,192 @@
     }
 
     // Update Company
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCompany']) == TRUE) {
+    // if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCompany']) == TRUE) {
 
-        $update_id      = $_POST['update_id'];
-        $logo           = $_POST['logo'];
-        $code           = $_POST['code'];
-        $name           = $_POST['name'];
-        $local_name     = $_POST['local_name'];
-        $address        = $_POST['address'];
-        $local_address  = $_POST['local_address'];
-        $phone          = $_POST['phone'];
-        $email          = $_POST['email'];
-        $vat            = $_POST['vat'];
-        $note           = $_POST['note'];
-        $updated_date   = $_POST['updated_date'];
+    //     $update_id      = $_POST['update_id'];
+    //     $logo           = $_POST['logo'];
+    //     $code           = $_POST['code'];
+    //     $name           = $_POST['name'];
+    //     $local_name     = $_POST['local_name'];
+    //     $address        = $_POST['address'];
+    //     $local_address  = $_POST['local_address'];
+    //     $phone          = $_POST['phone'];
+    //     $email          = $_POST['email'];
+    //     $vat            = $_POST['vat'];
+    //     $note           = $_POST['note'];
+    //     $updated_date   = $_POST['updated_date'];
 
-        // ✅ Fetch created_date from DB first
-        $stmtCheck = $conn->prepare("SELECT created_date FROM company WHERE id = ?");
-        $stmtCheck->bind_param("i", $update_id);
-        $stmtCheck->execute();
-        $stmtCheck->bind_result($created_date);
-        $stmtCheck->fetch();
-        $stmtCheck->close();
+    //     // ✅ Fetch created_date from DB first
+    //     $stmtCheck = $conn->prepare("SELECT created_date FROM company WHERE id = ?");
+    //     $stmtCheck->bind_param("i", $update_id);
+    //     $stmtCheck->execute();
+    //     $stmtCheck->bind_result($created_date);
+    //     $stmtCheck->fetch();
+    //     $stmtCheck->close();
 
-        // ✅ Convert to DateTime for comparison
-        $dtCreated = new DateTime($created_date);
-        $dtUpdated = new DateTime($updated_date);
+    //     // ✅ Convert to DateTime for comparison
+    //     $dtCreated = new DateTime($created_date);
+    //     $dtUpdated = new DateTime($updated_date);
 
-        // ✅ Validate: updated_date cannot be before created_date
-        if ($dtUpdated < $dtCreated) {
-            $_SESSION['message']      = 'Updated date cannot be earlier than created date (' . $dtCreated->format('d/m/Y') . ').';
-            $_SESSION['message_type'] = 'danger';
-            header('Location: company.php');
-            exit();
-        }
+    //     // ✅ Validate: updated_date cannot be before created_date
+    //     if ($dtUpdated < $dtCreated) {
+    //         $_SESSION['message']      = 'Updated date cannot be earlier than created date (' . $dtCreated->format('d/m/Y') . ').';
+    //         $_SESSION['message_type'] = 'danger';
+    //         header('Location: company.php');
+    //         exit();
+    //     }
 
-        $stmt = $conn->prepare("UPDATE company SET 
-                                    logo = ?,
-                                    code = ?, 
-                                    name = ?, 
-                                    local_name = ?, 
-                                    address = ?,
-                                    local_address = ?,
-                                    phone = ?,
-                                    email = ?,
-                                    vat = ?,
-                                    note = ?, 
-                                    updated_date = ? 
-                                WHERE id = ?
-                            ");
-        $stmt->bind_param("sssssssssssi", 
-                            $logo,
-                            $code, 
-                            $name, 
-                            $local_name, 
-                            $address, 
-                            $local_address,
-                            $phone,
-                            $email,
-                            $vat,
-                            $note, 
-                            $updated_date,
-                            $update_id
-                        );
+    //     $stmt = $conn->prepare("UPDATE company SET 
+    //                                 logo = ?,
+    //                                 code = ?, 
+    //                                 name = ?, 
+    //                                 local_name = ?, 
+    //                                 address = ?,
+    //                                 local_address = ?,
+    //                                 phone = ?,
+    //                                 email = ?,
+    //                                 vat = ?,
+    //                                 note = ?, 
+    //                                 updated_date = ? 
+    //                             WHERE id = ?
+    //                         ");
+    //     $stmt->bind_param("sssssssssssi", 
+    //                         $logo,
+    //                         $code, 
+    //                         $name, 
+    //                         $local_name, 
+    //                         $address, 
+    //                         $local_address,
+    //                         $phone,
+    //                         $email,
+    //                         $vat,
+    //                         $note, 
+    //                         $updated_date,
+    //                         $update_id
+    //                     );
         
-        if ($stmt->execute()) {
-            $_SESSION['message'] = 'Warehouse updated Successfully!';
-            $_SESSION['message_type'] = 'success';
-        } else {
-            $_SESSION['message'] = 'Warehouse update Unsuccessful! Error: ' . $stmt->error;
-            $_SESSION['message_type'] = 'danger';
-        }
-        $stmt->close();
+    //     if ($stmt->execute()) {
+    //         $_SESSION['message'] = 'Warehouse updated Successfully!';
+    //         $_SESSION['message_type'] = 'success';
+    //     } else {
+    //         $_SESSION['message'] = 'Warehouse update Unsuccessful! Error: ' . $stmt->error;
+    //         $_SESSION['message_type'] = 'danger';
+    //     }
+    //     $stmt->close();
     
-        header('Location: company.php');
-        exit();
-    }
+    //     header('Location: company.php');
+    //     exit();
+    // }
+
+    // if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCompany']) == TRUE) {
+
+    //     $update_id      = (int)$_POST['update_id'];
+    //     $code           = trim($_POST['code'] ?? '');
+    //     $name           = trim($_POST['name'] ?? '');
+    //     $local_name     = trim($_POST['local_name'] ?? '');
+    //     $address        = trim($_POST['address'] ?? '');
+    //     $local_address  = trim($_POST['local_address'] ?? '');
+    //     $phone          = trim($_POST['phone'] ?? '');
+    //     $email          = trim($_POST['email'] ?? '');
+    //     $vat            = trim($_POST['vat'] ?? '');
+    //     $note           = trim($_POST['note'] ?? '');
+    //     $updated_date   = trim($_POST['updated_date'] ?? '');
+
+    //     // Fetch old logo and created_date
+    //     $stmt = $conn->prepare("SELECT logo, created_date FROM company WHERE id = ?");
+    //     $stmt->bind_param("i", $update_id);
+    //     $stmt->execute();
+    //     $stmt->bind_result($oldImage, $created_date);
+    //     $stmt->fetch();
+    //     $stmt->close();
+
+    //     $logo = $oldImage;  // Keep old logo by default
+
+    //     // Handle logo upload
+    //     if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK && $_FILES['logo']['size'] > 0) {
+            
+    //         $image = $_FILES['logo'];
+            
+    //         // Basic validation (improve this!)
+    //         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    //         $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    //         $mime = finfo_file($finfo, $image['tmp_name']);
+    //         finfo_close($finfo);
+
+    //         if (!in_array($mime, $allowedTypes)) {
+    //             $_SESSION['message'] = 'Invalid file type! Only images allowed.';
+    //             $_SESSION['message_type'] = 'danger';
+    //             header('Location: company.php');
+    //             exit();
+    //         }
+
+    //         $ext = strtolower(pathinfo($image['name'], PATHINFO_EXTENSION));
+    //         $imageName = md5(uniqid(rand(), true)) . '.' . $ext;   // Better unique name
+    //         $imagePath = "images/uploads/users/";                  // Trailing slash
+    //         $targetFile = $imagePath . $imageName;
+
+    //         if (move_uploaded_file($image['tmp_name'], $targetFile)) {
+    //             // Delete old image if exists
+    //             if (!empty($oldImage)) {
+    //                 $oldImageFullPath = $imagePath . $oldImage;
+    //                 if (file_exists($oldImageFullPath)) {
+    //                     unlink($oldImageFullPath);
+    //                 }
+    //             }
+    //             $logo = $imageName;
+    //         } else {
+    //             $_SESSION['message'] = 'Failed to upload logo!';
+    //             $_SESSION['message_type'] = 'danger';
+    //             header('Location: company.php');
+    //             exit();
+    //         }
+    //     }
+
+    //     // Date validation
+    //     if (!empty($updated_date) && !empty($created_date)) {
+    //         try {
+    //             $dtCreated = new DateTime($created_date);
+    //             $dtUpdated = new DateTime($updated_date);
+
+    //             if ($dtUpdated < $dtCreated) {
+    //                 $_SESSION['message'] = 'Updated date cannot be earlier than created date (' . $dtCreated->format('d/m/Y') . ').';
+    //                 $_SESSION['message_type'] = 'danger';
+    //                 header('Location: company.php');
+    //                 exit();
+    //             }
+    //         } catch (Exception $e) {
+    //             $_SESSION['message'] = 'Invalid date format.';
+    //             $_SESSION['message_type'] = 'danger';
+    //             header('Location: company.php');
+    //             exit();
+    //         }
+    //     }
+
+    //     // Update query
+    //     $stmt = $conn->prepare("UPDATE company SET 
+    //                                 logo = ?, code = ?, name = ?, local_name = ?, 
+    //                                 address = ?, local_address = ?, phone = ?, 
+    //                                 email = ?, vat = ?, note = ?, updated_date = ? 
+    //                             WHERE id = ?");
+
+    //     $stmt->bind_param("sssssssssssi", 
+    //         $logo, $code, $name, $local_name, $address, 
+    //         $local_address, $phone, $email, $vat, $note, 
+    //         $updated_date, $update_id
+    //     );
+
+    //     if ($stmt->execute()) {
+    //         $_SESSION['message'] = 'Company updated successfully!';
+    //         $_SESSION['message_type'] = 'success';
+    //     } else {
+    //         $_SESSION['message'] = 'Update failed! Error: ' . $stmt->error;
+    //         $_SESSION['message_type'] = 'danger';
+    //     }
+    //     $stmt->close();
+
+    //     header('Location: company.php');
+    //     exit();
+    // }
 
     // Delete Company
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete']) == TRUE) {
