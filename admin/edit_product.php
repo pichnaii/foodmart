@@ -1,5 +1,15 @@
 <?php 
     require_once 'include/dbconnection.php'; 
+
+    // Authorization: ensure current user can update products
+    $isAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin';
+    if (!$isAdmin && (!isset($_SESSION['product_update']) || $_SESSION['product_update'] != 1)) {
+        $_SESSION['message'] = 'Access denied: you do not have permission to update products.';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: product.php');
+        exit();
+    }
+
     // Update Product
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateProduct']) == TRUE) {
         $update_id = $_POST['update_id'];
@@ -8,6 +18,7 @@
         $price = $_POST['price'];
         $cost = $_POST['cost'];
         $status = $_POST['status'];
+        $discount = $_POST['discount'] ?? 0;
 
         // category id and name
         $category_id = (int)($_POST['category'] ?? 0);
@@ -57,10 +68,11 @@
                                             category_id = ?, 
                                             category_name = ?, 
                                             status = ?, 
+                                            discount = ?, 
                                             image_path = ? 
                                         WHERE id = ?
                                     ");
-                $stmt->bind_param("ssssisisisi", 
+                $stmt->bind_param("ssssisisissi", 
                                     $code, 
                                     $name, 
                                     $price, 
@@ -69,7 +81,8 @@
                                     $unit, 
                                     $category_id, 
                                     $category_name, 
-                                    $status, 
+                                    $status,
+                                    $discount,
                                     $encryptedName, 
                                     $update_id
                                 );
@@ -89,10 +102,11 @@
                                         unit = ?, 
                                         category_id = ?, 
                                         category_name = ?, 
-                                        status = ? 
+                                        status = ?,
+                                        discount = ? 
                                     WHERE id = ?
                                 ");
-            $stmt->bind_param("ssssisisii",
+            $stmt->bind_param("ssssisisisi",
                                 $code, 
                                 $name, 
                                 $price, 
@@ -102,6 +116,7 @@
                                 $category_id, 
                                 $category_name, 
                                 $status, 
+                                $discount,
                                 $update_id
                             );
         }
@@ -129,6 +144,7 @@
                     units.name AS unit_name,
                     products.price AS product_price,
                     products.cost AS product_cost,
+                    products.discount AS product_discount,
                     products.quantity AS quantity,
                     products.status AS status,
                     categories.id AS category_id,
@@ -229,6 +245,12 @@
                                 <div class="form-group">
                                     <label for="price" class="mb-1">Price</label>
                                     <input type="text" class="form-control" name="price" value="<?= htmlspecialchars($edit_product['product_price']) ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="discount" class="mb-1">Discount (%)</label>
+                                    <input type="text" class="form-control" name="discount" value="<?= htmlspecialchars($edit_product['product_discount']) ?>">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -336,10 +358,10 @@
             // Initialize Select2
             $(document).ready(function () {
                 $('#categorySelect').select2({
-                    theme: 'bootstrap-5',           // matches Bootstrap styling
+                    theme: 'bootstrap-5',       
                     placeholder: '-- Choose a category --',
-                    allowClear: true,               // shows an X to clear selection
-                    width: '100%'                   // full width of the container
+                    allowClear: true,         
+                    width: '100%'                
                 });
 
                 $('#unitSelect').select2({

@@ -16,7 +16,7 @@
         $encryp_password = md5($password);
 
         // Prepare and execute the SQL statement
-        $stmt = $conn->prepare("SELECT id, user_role FROM users WHERE username = ? AND password = ?");
+        $stmt = $conn->prepare("SELECT id, user_role, firstname, lastname FROM users WHERE username = ? AND password = ?");
         if ($stmt === false) {
             die('Prepare failed: ' . htmlspecialchars($conn->error));
         }
@@ -25,11 +25,12 @@
         $stmt->store_result();
 
         if ($stmt->num_rows > 0) {
-            $stmt->bind_result($user_id, $user_role);
+            $stmt->bind_result($user_id, $user_role, $firstname, $lastname);
             $stmt->fetch();
             $_SESSION['user_id'] = $user_id;
             $_SESSION['user_role'] = $user_role;
             $_SESSION['username'] = $username;
+            $_SESSION['firstname'] = $firstname;
             $_SESSION['lastname'] = $lastname;
 
             $_SESSION['message'] = $username;

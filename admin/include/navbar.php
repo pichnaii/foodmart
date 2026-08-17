@@ -14,7 +14,7 @@
     <div class="navbar-nav align-items-center ms-auto text-dark">
         <?php if ($_SESSION['user_role'] == 'admin' || ($_SESSION['user_role'] == 'accounting' && $config_page['user'] == 1)) { ?>    
             <div>
-                <a href="pos.php" class="nav-link px-3 dark" target="_blank">
+                <a href="pos1.php" class="nav-link px-3 dark" target="_blank">
                     <i class="fa fa-shopping-cart me-lg-2 text-dark"></i>
                     <span class="d-none d-lg-inline-flex">POS</span>
                 </a>
@@ -94,9 +94,11 @@
                 <img class="rounded-circle me-lg-2" src="img/panda.png" alt="" style="width: 40px; height: 40px;">
                 <span class="d-none d-lg-inline-flex fw-bold">
                     <?php 
-                        if(isset($_SESSION['username'])) {
+                        if(isset($_SESSION['firstname']) && isset($_SESSION['lastname'])) {
+                            echo htmlspecialchars($_SESSION['lastname']) . ' ' . htmlspecialchars($_SESSION['firstname']);
+                        } else {
                             echo htmlspecialchars($_SESSION['username']);
-                        } 
+                        }
                     ?>
                 </span>
             </a>

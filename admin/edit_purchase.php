@@ -1,19 +1,28 @@
 <?php
     require_once 'include/dbconnection.php';
-    // Add Purchase
-    if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addpurchase'])) {
-        $create_date    = $_POST['create_date'];
-        $reference      = $_POST['reference'];
-        $rate           = (float)($_POST['exchange_rate'] ?? 0);
-        $tax            = (float)($_POST['tax'] ?? 0);
-        $discount       = (float)($_POST['discount'] ?? 0);
-        $shipping       = (float)($_POST['shipping'] ?? 0);
-        $note           = $_POST['note'];
-        $status         = $_POST['status'] ?? 'pending';
-        $other_reference = $_POST['other_reference'] ?? '';
 
-        $transaction_date = $_POST['create_date'];
-        $transaction_type = 'Purchase';
+    // ------------------------------------------------------------------
+    // Update Purchase (this is the EDIT page, so we UPDATE, not INSERT)
+    // ------------------------------------------------------------------
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addpurchase'])) {
+        $id = (int)($_POST['id'] ?? 0);
+
+        if ($id <= 0) {
+            $_SESSION['message'] = 'Invalid purchase record.';
+            $_SESSION['message_type'] = 'danger';
+            header('Location: purchase.php');
+            exit();
+        }
+
+        $create_date      = $_POST['create_date'];
+        $reference        = $_POST['reference'];
+        $rate             = (float)($_POST['exchange_rate'] ?? 0);
+        $tax              = (float)($_POST['tax'] ?? 0);
+        $discount         = (float)($_POST['discount'] ?? 0);
+        $shipping         = (float)($_POST['shipping'] ?? 0);
+        $note             = $_POST['note'];
+        $status           = $_POST['status'] ?? 'pending';
+        $other_reference  = $_POST['other_reference'] ?? '';
 
         // company id and name
         $company_id = (int)$_POST['company'];
@@ -32,7 +41,7 @@
         $stmtWarehouse->bind_result($warehouse);
         $stmtWarehouse->fetch();
         $stmtWarehouse->close();
-        
+
         // supplier id and name
         $supplier_id = (int)$_POST['supplier'];
         $stmtSupplier = $conn->prepare("SELECT name FROM supplier WHERE id = ?");
@@ -43,115 +52,143 @@
         $stmtSupplier->close();
 
         // product arrays from the dynamic table
-        $product_ids    = $_POST['product_id'] ?? [];
-        $product_codes  = $_POST['product_code'] ?? [];
-        $product_names  = $_POST['product_name'] ?? [];
-        $units          = $_POST['unit'] ?? [];
-        $costs          = $_POST['cost'] ?? [];
-        $qtys           = $_POST['qty'] ?? [];
+        $product_ids   = $_POST['product_id'] ?? [];
+        $product_codes = $_POST['product_code'] ?? [];
+        $product_names = $_POST['product_name'] ?? [];
+        $units         = $_POST['unit'] ?? [];
+        $costs         = $_POST['cost'] ?? [];
+        $qtys          = $_POST['qty'] ?? [];
 
-        // basic validation: must have at least one product row
         if (count($product_ids) === 0) {
             $_SESSION['message'] = 'Please add at least one product.';
             $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
+            header('Location: edit_purchase.php?id=' . $id);
             exit();
         }
 
         // calculate grand total
         $grand_total = 0.0;
-        $amount = 0.0;
-        $cost = 0.0;
         for ($i = 0; $i < count($product_ids); $i++) {
             $c = (float)($costs[$i] ?? 0);
             $q = (int)($qtys[$i] ?? 0);
             $grand_total += $c * $q;
-            $amount += $c * $q;
-            $cost += $c;
         }
 
-        // Use transaction: insert into purchases then purchase_items
         $conn->begin_transaction();
 
-        // Balance Sheet
-        $stmtBalanceSheet = $conn->prepare("INSERT INTO balance_sheet (transaction_date, company_id, warehouse_id, transaction_type, amount, cost) VALUES (?, ?, ?, ?, ?, ?)");
-        if (!$stmtBalanceSheet) {
-            $conn->rollback();
-            $_SESSION['message'] = 'Prepare failed (Balance Sheet): ' . $conn->error;
-            $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
-            exit();
-        }
-        $stmtBalanceSheet->bind_param("siissd", $transaction_date, $company_id, $warehouse_id, $transaction_type, $amount, $cost);
-        if (!$stmtBalanceSheet->execute()) {
-            $stmtBalanceSheet->close();
-            $conn->rollback();
-            $_SESSION['message'] = 'Insert failed (Balance Sheet)' . $stmtBalanceSheet->error;
-            $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
-            exit();
-        }
-        $stmtBalanceSheet->close();
-
-        // Purchase 
-        $stmt = $conn->prepare("INSERT INTO purchases 
-                                (
-                                    create_date, 
-                                    reference, 
-                                    supplier_id, 
-                                    supplier_name, 
-                                    company_id,
-                                    company, 
-                                    warehouse_id,
-                                    warehouse, 
-                                    rate, 
-                                    tax, 
-                                    discount, 
-                                    shipping, 
-                                    note,
-                                    status,
-                                    other_reference,
-                                    grand_total
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                            ");
+        // ---- Update the purchase header (was previously INSERTing a
+        //      brand-new row here, which is why edits weren't saving) ----
+        $stmt = $conn->prepare("UPDATE purchases SET
+                                    create_date = ?,
+                                    reference = ?,
+                                    supplier_id = ?,
+                                    supplier_name = ?,
+                                    company_id = ?,
+                                    company = ?,
+                                    warehouse_id = ?,
+                                    warehouse = ?,
+                                    rate = ?,
+                                    tax = ?,
+                                    discount = ?,
+                                    shipping = ?,
+                                    note = ?,
+                                    status = ?,
+                                    other_reference = ?,
+                                    grand_total = ?
+                                WHERE id = ?");
         if (!$stmt) {
             $conn->rollback();
             $_SESSION['message'] = 'Prepare failed (purchases): ' . $conn->error;
             $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
+            header('Location: edit_purchase.php?id=' . $id);
             exit();
         }
 
-        $stmt->bind_param("ssisisisddddsssd", 
-                            $create_date, 
-                            $reference, 
-                            $supplier_id, 
-                            $supplier_name, 
-                            $company_id, 
-                            $company, 
-                            $warehouse_id,
-                            $warehouse, 
-                            $rate, 
-                            $tax, 
-                            $discount, 
-                            $shipping, 
-                            $note, 
-                            $status,
-                            $other_reference,
-                            $grand_total
-                        );
+        $stmt->bind_param(
+            "ssisisisddddsssdi",
+            $create_date,
+            $reference,
+            $supplier_id,
+            $supplier_name,
+            $company_id,
+            $company,
+            $warehouse_id,
+            $warehouse,
+            $rate,
+            $tax,
+            $discount,
+            $shipping,
+            $note,
+            $status,
+            $other_reference,
+            $grand_total,
+            $id
+        );
         if (!$stmt->execute()) {
             $stmt->close();
             $conn->rollback();
-            $_SESSION['message'] = 'Insert failed (purchases)' . $stmt->error;
+            $_SESSION['message'] = 'Update failed (purchases): ' . $stmt->error;
             $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
+            header('Location: edit_purchase.php?id=' . $id);
             exit();
         }
-        $purchase_id = $conn->insert_id;
         $stmt->close();
 
-        // Prepare purchase_items insert
+        // Get old purchase items before deleting them
+        $oldItemsStmt = $conn->prepare("SELECT product_id, quantity FROM purchase_items WHERE purchase_id = ?");
+        if (!$oldItemsStmt) {
+            $conn->rollback();
+            $_SESSION['message'] = 'Prepare failed (old items): ' . $conn->error;
+            $_SESSION['message_type'] = 'danger';
+            header('Location: edit_purchase.php?id=' . $id);
+            exit();
+        }
+        $oldItemsStmt->bind_param("i", $id);
+        $oldItemsStmt->execute();
+        $oldItemsResult = $oldItemsStmt->get_result();
+        $oldItems = $oldItemsResult->fetch_all(MYSQLI_ASSOC);
+        $oldItemsStmt->close();
+
+        // Reverse old stock
+        $reverseStockStmt = $conn->prepare("UPDATE products SET quantity = IFNULL(quantity, 0) - ? WHERE id = ?");
+        if (!$reverseStockStmt) {
+            $conn->rollback();
+            $_SESSION['message'] = 'Prepare failed (reverse stock): ' . $conn->error;
+            $_SESSION['message_type'] = 'danger';
+            header('Location: edit_purchase.php?id=' . $id);
+            exit();
+        }
+        foreach ($oldItems as $oldItem) {
+            $oldPid = (int)$oldItem['product_id'];
+            $oldQty = (int)$oldItem['quantity'];
+            $reverseStockStmt->bind_param("ii", $oldQty, $oldPid);
+            if (!$reverseStockStmt->execute()) {
+                $reverseStockStmt->close();
+                $conn->rollback();
+                $_SESSION['message'] = 'Failed to reverse old stock: ' . $reverseStockStmt->error;
+                $_SESSION['message_type'] = 'danger';
+                header('Location: edit_purchase.php?id=' . $id);
+                exit();
+            }
+        }
+        $reverseStockStmt->close();
+
+        //---- Replace line items: clear old ones, insert current set ----//
+        $delStmt = $conn->prepare("DELETE FROM purchase_items WHERE purchase_id = ?");
+        $delStmt->bind_param("i", $id);
+        if (!$delStmt->execute()) {
+            $delStmt->close();
+            $conn->rollback();
+            $_SESSION['message'] = 'Failed to clear old items: ' . $delStmt->error;
+            $_SESSION['message_type'] = 'danger';
+            header('Location: edit_purchase.php?id=' . $id);
+            exit();
+        }
+        $delStmt->close();
+
+        // prepare quantity
+        $stmtQuantity = $conn->prepare("UPDATE products SET quantity = IFNULL(quantity, 0) + ? WHERE id = ?");
+
         $itemStmt = $conn->prepare("INSERT INTO purchase_items 
                                     (
                                         purchase_id, 
@@ -166,39 +203,28 @@
             $conn->rollback();
             $_SESSION['message'] = 'Prepare failed (items): ' . $conn->error;
             $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
+            header('Location: edit_purchase.php?id=' . $id);
             exit();
         }
 
-        // Loop and insert each item
         for ($i = 0; $i < count($product_ids); $i++) {
-            $pid = (int)$product_ids[$i];
+            $pid   = (int)$product_ids[$i];
             $pcode = $product_codes[$i] ?? '';
             $pname = $product_names[$i] ?? '';
-            $unit = $units[$i] ?? '';
-            $cost = (float)($costs[$i] ?? 0);
-            $qty = (int)($qtys[$i] ?? 0);
+            $unit  = $units[$i] ?? '';
+            $cost  = (float)($costs[$i] ?? 0);
+            $qty   = (int)($qtys[$i] ?? 0);
 
-            $itemStmt->bind_param("iisssdi", $purchase_id, $pid, $pcode, $pname, $unit, $cost, $qty);
+            $itemStmt->bind_param("iisssdi", $id, $pid, $pcode, $pname, $unit, $cost, $qty);
             if (!$itemStmt->execute()) {
                 $itemStmt->close();
                 $conn->rollback();
                 $_SESSION['message'] = 'Insert failed (items): ' . $itemStmt->error;
                 $_SESSION['message_type'] = 'danger';
-                header('Location: add_purchase.php');
+                header('Location: edit_purchase.php?id=' . $id);
                 exit();
             }
-
-            // insert quantity into product table
-            $stmtQuantity = $conn->prepare("UPDATE products SET quantity = IFNULL(quantity, 0) + ? WHERE id = ?");
-            if (!$stmtQuantity) {
-                $itemStmt->close();
-                $conn->rollback();
-                $_SESSION['message'] = 'Prepare failed (quantity): ' . $conn->error;
-                $_SESSION['message_type'] = 'danger';
-                header('Location: add_purchase.php');
-                exit();
-            }
+            
             $stmtQuantity->bind_param("ii", $qty, $pid);
             if (!$stmtQuantity->execute()) {
                 $stmtQuantity->close();
@@ -212,36 +238,74 @@
                 exit();
             }
 
-            $stmtQuantity->close();
+            // $stmtQuantity->close();
         }
         $itemStmt->close();
+
         $conn->commit();
 
-        $_SESSION['message'] = 'Purchase added Successfully!';
+        $_SESSION['message'] = 'Purchase updated successfully!';
         $_SESSION['message_type'] = 'success';
         header('Location: purchase.php');
         exit();
     }
 
+    // ------------------------------------------------------------------
+    // Load the purchase for editing
+    // ------------------------------------------------------------------
+    $id = (int) ($_GET['id'] ?? 0);
+    if ($id <= 0) {
+        header('Location: purchase.php');
+        exit();
+    }
+
+    $edit_sql = "SELECT 
+                    id,
+                    create_date,
+                    reference,
+                    other_reference,
+                    company_id,
+                    company,
+                    warehouse_id,
+                    warehouse,
+                    supplier_id,
+                    supplier_name,
+                    grand_total,
+                    rate,
+                    tax,
+                    discount,
+                    shipping,
+                    paid,
+                    (grand_total - IFNULL(paid, 0)) AS balance,
+                    status,
+                    payment_status,
+                    note
+                FROM purchases 
+                WHERE id = ?
+            ";
+    $stmtEdit = $conn->prepare($edit_sql);
+    $stmtEdit->bind_param("i", $id);
+    $stmtEdit->execute();
+    $edit_purchase = $stmtEdit->get_result()->fetch_assoc();
+    $stmtEdit->close();
+
+    if (!$edit_purchase) {
+        header('Location: purchase.php');
+        exit();
+    }
+
+    // Existing line items, so the product table is pre-populated on load
+    $itemsStmt = $conn->prepare("SELECT product_id, product_code, product_name, unit, cost, quantity 
+                                  FROM purchase_items WHERE purchase_id = ?");
+    $itemsStmt->bind_param("i", $id);
+    $itemsStmt->execute();
+    $purchase_items = $itemsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $itemsStmt->close();
+
     $product = $conn->query('SELECT id, code, name, unit, cost FROM products ORDER BY name ASC');
     $company = $conn->query('SELECT id, name FROM company');
     $suppliers = $conn->query('SELECT id, name FROM supplier');
     $warehouse = $conn->query('SELECT id, name FROM warehouse');
-    $currencies = $conn->query('SELECT id, exchange_rate FROM currency WHERE currency_code != "USD"')->fetch_assoc();
-
-    // Generate a new reference number for the purchase
-    $year = date('Y');
-    $prefix = "WWS/PU/{$year}/";
-    $getLastReference = $conn->query("SELECT MAX(reference) AS reference FROM purchases WHERE reference LIKE '{$prefix}%'");
-    $row = $getLastReference->fetch_assoc();
-    if ($row && $row['reference']) {
-        $lastNumber = (int) substr($row['reference'], -6);  // get last 6 digits
-        $nextNumber = $lastNumber + 1;
-    } else {
-        $nextNumber = 1;
-    }
-
-    $reference_no = $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
     $conn->close();
 ?>
@@ -270,24 +334,25 @@
                         </div>
                         <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
                     <?php } ?>
-                    <form action="add_purchase.php" method="post" enctype="multipart/form-data">
+                    <form action="edit_purchase.php" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="id" value="<?= (int)$edit_purchase['id'] ?>">
                         <div class="row g-3">
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="date">Date</label>
-                                    <input type="date" class="form-control" id="date" name="create_date" value="<?= date('Y-m-d') ?>">
+                                    <input type="date" class="form-control" id="date" name="create_date" value="<?= $edit_purchase['create_date'] ?>">
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="reference_no">Reference</label>
-                                    <input type="text" class="form-control" id="reference_no" name="reference" value="<?= $reference_no ?>" readonly>
+                                    <input type="text" class="form-control" id="reference_no" name="reference" value="<?= $edit_purchase['reference'] ?>" readonly>
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="other_reference">Other Reference</label>
-                                    <input type="text" class="form-control" id="other_reference" name="other_reference" value="">
+                                    <input type="text" class="form-control" id="other_reference" name="other_reference" value="<?= $edit_purchase['other_reference'] ?>">
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
@@ -296,7 +361,8 @@
                                     <select id="supplierSelect" class="form-select" name="supplier">
                                         <?php
                                             while($sup = $suppliers->fetch_assoc()) {
-                                                echo "<option value='" . $sup['id'] . "'>" . htmlspecialchars($sup['name']) . "</option>";
+                                                $selected = ($sup['id'] == $edit_purchase['supplier_id']) ? 'selected' : '';
+                                                echo "<option value='" . $sup['id'] . "' $selected>" . htmlspecialchars($sup['name']) . "</option>";
                                             }
                                         ?>
                                     </select>
@@ -308,7 +374,8 @@
                                     <select id="companySelect" class="form-select" name="company">
                                         <?php
                                             while($com = $company->fetch_assoc()) {
-                                                echo "<option value='" . $com['id'] . "'>" . htmlspecialchars($com['name']) . "</option>";
+                                                $selected = ($com['id'] == $edit_purchase['company_id']) ? 'selected' : '';
+                                                echo "<option value='" . $com['id'] . "' $selected>" . htmlspecialchars($com['name']) . "</option>";
                                             }
                                         ?>
                                     </select>
@@ -320,7 +387,8 @@
                                     <select id="warehouseSelect" class="form-select" name="warehouse">
                                         <?php
                                             while($war = $warehouse->fetch_assoc()) {
-                                                echo "<option value='" . $war['id'] . "'>" . htmlspecialchars($war['name']) . "</option>";
+                                                $selected = ($war['id'] == $edit_purchase['warehouse_id']) ? 'selected' : '';
+                                                echo "<option value='" . $war['id'] . "' $selected>" . htmlspecialchars($war['name']) . "</option>";
                                             }
                                         ?>
                                     </select>
@@ -329,7 +397,7 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="exchange_rate">Exchange Rate</label>
-                                    <input type="text" class="form-control" id="exchange_rate" name="exchange_rate" value="<?= $currencies['exchange_rate'] ?>">
+                                    <input type="text" class="form-control" id="exchange_rate" name="exchange_rate" value="<?= $edit_purchase['rate'] ?>">
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -354,7 +422,7 @@
                                         ?>
                                     </select>
                                 </div>
-                                </div>
+                            </div>
                             <div class="col-md-12">
                                 <div class="table-responsive">
                                     <table class="table table-bordered align-middle mb-0">
@@ -369,7 +437,44 @@
                                             </tr>
                                         </thead>
                                         <tbody class="text-title">
-                                            <!-- Dynamic rows will be added here -->
+                                            <?php
+                                                // Pre-populate rows from the existing purchase_items,
+                                                // using the SAME markup shape the JS "add product"
+                                                // handler builds, so recalcTotals(), the qty/cost
+                                                // inputs, remove-row, and "select again -> bump qty"
+                                                // all keep working without any extra JS.
+                                                $rowNo = 1;
+                                                foreach ($purchase_items as $item):
+                                                    $pid   = (int)$item['product_id'];
+                                                    $pcode = htmlspecialchars($item['product_code'], ENT_QUOTES);
+                                                    $pname = htmlspecialchars($item['product_name'], ENT_QUOTES);
+                                                    $unit  = htmlspecialchars($item['unit'], ENT_QUOTES);
+                                                    $cost  = (float)$item['cost'];
+                                                    $qty   = (int)$item['quantity'];
+                                            ?>
+                                            <tr id="row-<?= $pid ?>">
+                                                <td class="text-center row-no"><?= $rowNo++ ?></td>
+                                                <td>
+                                                    <?= $pcode ?> - <?= $pname ?>
+                                                    <input type="hidden" name="product_id[]" value="<?= $pid ?>">
+                                                    <input type="hidden" name="product_code[]" value="<?= $pcode ?>">
+                                                    <input type="hidden" name="product_name[]" value="<?= $pname ?>">
+                                                    <span class="fw-bold float-end px-2"><i class="bi bi-pencil-square cursor-pointer" data-bs-toggle="modal" data-bs-target="#editproduct" title="Edit"></i></span>
+                                                    <span class="fw-bold float-end"><i class="bi bi-chat-dots cursor-pointer" data-bs-toggle="modal" data-bs-target="#comment" title="Comment"></i></span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <?= $unit ?>
+                                                    <input type="hidden" name="unit[]" value="<?= $unit ?>">
+                                                </td>
+                                                <td class="text-center">
+                                                    <input type="text" class="form-control text-center cost-input" name="cost[]" value="<?= number_format($cost, 2, '.', '') ?>" step="0.01">
+                                                </td>
+                                                <td class="text-center">
+                                                    <input type="number" class="form-control text-center qty-input" name="qty[]" value="<?= $qty ?>" min="1" data-id="<?= $pid ?>">
+                                                </td>
+                                                <td class="text-center"><a class="remove-row"><i class="bi bi-trash text-danger cursor-pointer fs-4"></i></a></td>
+                                            </tr>
+                                            <?php endforeach; ?>
                                         </tbody>
                                         <tfoot>
                                             <tr class="bg-light">
@@ -385,35 +490,35 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="tax">Tax</label>
-                                    <input type="text" class="form-control" id="tax" name="tax">
+                                    <input type="text" class="form-control" id="tax" name="tax" value="<?= $edit_purchase['tax'] ?>">
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="discount">Discount</label>
-                                    <input type="text" class="form-control" id="discount" name="discount">
+                                    <input type="text" class="form-control" id="discount" name="discount" value="<?= $edit_purchase['discount'] ?>">
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="Shipping">Shipping</label>
-                                    <input type="text" class="form-control" id="Shipping" name="shipping">
+                                    <input type="text" class="form-control" id="Shipping" name="shipping" value="<?= $edit_purchase['shipping'] ?>">
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="form-group">
                                     <label for="status">Status</label>
                                     <select class="form-select" id="status" name="status" disabled>
-                                        <option value="pending">Pending</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="rejected">Rejected</option>
+                                        <option value="pending" <?= ($edit_purchase['status'] === 'pending') ? 'selected' : '' ?>>Pending</option>
+                                        <option value="approved" <?= ($edit_purchase['status'] === 'approved') ? 'selected' : '' ?>>Approved</option>
+                                        <option value="rejected" <?= ($edit_purchase['status'] === 'rejected') ? 'selected' : '' ?>>Rejected</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <label for="floatingTextarea2">Noted</label>
                                 <div class="form-floating">
-                                    <textarea class="form-control" name="note" placeholder="Leave a comment here" id="floatingTextarea2" style="height: 100px"></textarea>
+                                    <textarea class="form-control" name="note" id="floatingTextarea2" style="height: 100px"><?= htmlspecialchars($edit_purchase['note'] ?? '') ?></textarea>
                                     <label for="floatingTextarea2">Write something here...!</label>
                                 </div>
                             </div>
@@ -433,10 +538,10 @@
         $(document).ready(function() {
             $(document).ready(function () {
                 $('#productSelect').select2({
-                    theme: 'bootstrap-5',           // matches Bootstrap styling
+                    theme: 'bootstrap-5',
                     placeholder: '-- Choose a products --',
-                    allowClear: true,               // shows an X to clear selection
-                    width: '100%'                   // full width of the container
+                    allowClear: true,
+                    width: '100%'
                 });
 
                 $('#supplierSelect').select2({
@@ -481,12 +586,11 @@
                 var id = $opt.val();
                 if (!id) return;
 
-                // if row exists, increase qty
+                // if row exists (including rows pre-populated from the DB), increase qty
                 var $existing = $('#row-' + id);
                 if ($existing.length) {
                     var $qty = $existing.find('.qty-input');
                     $qty.val(parseInt($qty.val() || 0) + 1).trigger('change');
-                    // reset select
                     $(this).val(null).trigger('change');
                     return;
                 }
@@ -496,11 +600,10 @@
                 var unit = $opt.data('unit') || '';
                 var cost = parseFloat($opt.data('cost')) || 0;
 
-                // compute row number
                 var idx = $('tbody.text-title tr').length + 1;
                 var row = '<tr id="row-' + id + '">' +
                             '<td class="text-center row-no">' + idx + '</td>' +
-                            '<td>' + $('<div>').text(code + ' - ' + name).html() +
+                            '<td>' + $('<div>').text(code + ' - ' + name).html() + 
                                 '<input type="hidden" name="product_id[]" value="' + id + '">' +
                                 '<input type="hidden" name="product_code[]" value="' + $('<div>').text(code).html() + '">' +
                                 '<input type="hidden" name="product_name[]" value="' + $('<div>').text(name).html() + '">' +
@@ -514,7 +617,6 @@
                         '</tr>';
                 $('tbody.text-title').append(row);
                 recalcTotals();
-                // reset select
                 $(this).val(null).trigger('change');
             });
 
@@ -525,14 +627,13 @@
                 recalcTotals();
             });
 
-            // qty change handler (you can expand to update totals)
+            // qty change handler
             $('body').on('change', '.qty-input', function() {
                 var v = parseInt($(this).val() || 0);
                 if (v < 1) $(this).val(1);
                 recalcTotals();
-                // optional: recalc totals here
             });
-            recalcTotals();
+            recalcTotals(); // runs on load too, so pre-populated rows show correct totals immediately
 
             function updateRowNumbers() {
                 $('tbody.text-title tr').each(function(i){

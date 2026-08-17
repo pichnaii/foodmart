@@ -1,70 +1,167 @@
 <?php
-    session_start();
-    $servername = "localhost";
-    $username = "root";
-    $password = "";     
-    $dbname = "foodmart";
+    include 'include/dbconnection.php';
 
-    $conn = new mysqli($servername, $username, $password, $dbname);
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+    $requested_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+    $userole_id = 0;
+    $permission_id = 0;
+    $permission = null;
 
-    // Add Configuration
-    if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit']) == TRUE){
-    
-        $config_id = $_POST['config_id'];
-        $slideshow = $_POST['slideshow'];
-        $product = $_POST['product'];
-        $category = $_POST['category'];
-        $page = $_POST['page'];
-        $user = $_POST['user'];
-        $setting = $_POST['setting'];
-        $report = $_POST['report'];
-        $productprefix = $_POST['productprefix'];
-        $user_edit = isset($_POST['user_edit']) ? 1 : 0;
-        $user_delete = isset($_POST['user_delete']) ? 1 : 0;
+    // Permission Operations
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
+        $permission_id = isset($_POST['permission_id']) ? (int) $_POST['permission_id'] : 0;
+        $userole_id = isset($_POST['userole_id']) ? (int) $_POST['userole_id'] : 0;
 
-        $theme_color = $_POST['theme_color'];
-        $bg_color = filter_input(INPUT_POST, 'bg_color', FILTER_SANITIZE_STRING);
-        $sidebar_color = filter_input(INPUT_POST, 'sidebar_color', FILTER_SANITIZE_STRING);
-        $body_color = filter_input(INPUT_POST, 'body_color', FILTER_SANITIZE_STRING);
+        if ($permission_id <= 0 && $userole_id <= 0) {
+            $_SESSION['message'] = 'Permission ID or User Role ID missing...!';
+            $_SESSION['message_type'] = 'danger';
+            header('Location: permission.php');
+            exit();
+        }
 
-        if (preg_match('/^#[a-fA-F0-9]{6}$/', $bg_color) && preg_match('/^#[a-fA-F0-9]{6}$/', $sidebar_color) && preg_match('/^#[a-fA-F0-9]{6}$/', $body_color) ) {
-            $stmt = $conn->prepare("UPDATE configurations SET theme_color = ?, body_color = ?, bg_color = ?, sidebar_color = ?, slideshow = ?, product = ?, category = ?, page = ?, user = ?, setting = ?, report = ?, user_edit = ?, user_delete = ?, productprefix = ? WHERE id = ?");
-            if ($stmt === false) {
-                die('Prepare failed: ' . htmlspecialchars($conn->error));
-            }
-            $stmt->bind_param("isssiiiiiiiiisi", $theme_color, $body_color, $bg_color, $sidebar_color, $slideshow, $product, $category, $page, $user, $setting, $report, $user_edit, $user_delete, $productprefix, $config_id);
+        $slideshow = isset($_POST['slideshow']) ? 1 : 0;
+        $product_display = isset($_POST['product_display']) ? 1 : 0;
+        $product_create = isset($_POST['product_create']) ? 1 : 0;
+        $product_read = isset($_POST['product_read']) ? 1 : 0;
+        $product_update = isset($_POST['product_update']) ? 1 : 0;
+        $product_delete = isset($_POST['product_delete']) ? 1 : 0;
+        $report_display = isset($_POST['report_display']) ? 1 : 0;
 
-            if ($stmt->execute()) {
-                $_SESSION['message'] = 'Update Successfully!';
-                $_SESSION['message_type'] = 'success';
-            } else {
-                $_SESSION['message'] = 'Update Unsuccessfully!';
-                $_SESSION['message_type'] = 'danger';
-            }
-            $stmt->close();
+        if ($permission_id > 0) {
+            $stmtPermission = $conn->prepare("UPDATE user_permission SET 
+                                                    slideshow = ?, 
+                                                    product_display = ?, 
+                                                    product_create = ?, 
+                                                    product_read = ?, 
+                                                    product_update = ?, 
+                                                    product_delete = ?,
+                                                    report_display = ?
+                                                WHERE id = ?
+                                            ");
+            $stmtPermission->bind_param("iiiiiiii", 
+                                            $slideshow, 
+                                            $product_display, 
+                                            $product_create, 
+                                            $product_read, 
+                                            $product_update, 
+                                            $product_delete, 
+                                            $report_display,
+                                            $permission_id
+                                        );
         } else {
-            $_SESSION['message'] = 'Invalid color format.';
+            $stmt = $conn->prepare("SELECT id FROM user_permission WHERE userole_id = ?");
+            $stmt->bind_param("i", $userole_id);
+            $stmt->execute();
+            $stmt->store_result();
+            $hasPermission = $stmt->num_rows > 0;
+            $stmt->close();
+
+            if ($hasPermission) {
+                $stmtPermission = $conn->prepare("UPDATE user_permission SET 
+                                                        slideshow = ?, 
+                                                        product_display = ?, 
+                                                        product_create = ?, 
+                                                        product_read = ?, 
+                                                        product_update = ?, 
+                                                        product_delete = ?,
+                                                        report_display = ?
+                                                    WHERE userole_id = ?
+                                                ");
+                $stmtPermission->bind_param("iiiiiiii", 
+                                                $slideshow, 
+                                                $product_display, 
+                                                $product_create, 
+                                                $product_read, 
+                                                $product_update, 
+                                                $product_delete,
+                                                $report_display, 
+                                                $userole_id
+                                            );
+            } else {
+                $stmtPermission = $conn->prepare("INSERT INTO user_permission 
+                                                    (
+                                                        userole_id, 
+                                                        slideshow, 
+                                                        product_display, 
+                                                        product_create, 
+                                                        product_read, 
+                                                        product_update, 
+                                                        product_delete,
+                                                        report_display
+                                                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                                ");
+                $stmtPermission->bind_param("iiiiiiii", 
+                                                $userole_id, 
+                                                $slideshow, 
+                                                $product_display, 
+                                                $product_create, 
+                                                $product_read, 
+                                                $product_update, 
+                                                $product_delete,
+                                                $report_display
+                                            );
+            }
+        }
+
+        if ($stmtPermission->execute()) {
+            $_SESSION['message'] = 'Permission saved successfully!';
+            $_SESSION['message_type'] = 'success';
+        } else {
+            $_SESSION['message'] = 'Failed to save permission!';
             $_SESSION['message_type'] = 'danger';
         }
-        header('Location: configuration.php');
+        $stmtPermission->close();
+
+        header('Location: user_permission.php');
         exit();
     }
 
-    $permission = $conn->query('SELECT * FROM configurations')->fetch_assoc();
+    $config_setting = $conn->query('SELECT sidebar_color FROM configurations')->fetch_assoc();
 
-    $sql = "SELECT * FROM configurations WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $config_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $configurate = $result->fetch_assoc();
-    $stmt->close();
+    if ($requested_id > 0) {
+        $stmt = $conn->prepare("SELECT * FROM user_permission WHERE id = ?");
+        $stmt->bind_param("i", $requested_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $permission = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($permission) {
+            $permission_id = (int) $permission['id'];
+            $userole_id = (int) $permission['userole_id'];
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM user_permission WHERE userole_id = ?");
+            $stmt->bind_param("i", $requested_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $permission = $result->fetch_assoc();
+            $stmt->close();
+
+            if ($permission) {
+                $permission_id = (int) $permission['id'];
+                $userole_id = (int) $permission['userole_id'];
+            } else {
+                $userole_id = $requested_id;
+            }
+        }
+    }
+
+    if (!$permission) {
+        $permission = [
+            'slideshow' => 0, 
+            'product_display' => 0
+        ];
+    }
 
     $conn->close();
 ?>
+<style>
+    table.table tbody tr:hover td {
+        background-color: #DDDDDD !important;
+    }
+    table.table thead tr th {
+        color: <?= $config_setting['sidebar_color'] ?> !important;
+    }
+</style>
 <!DOCTYPE html>
 <html lang="en">
 <?php include "include/header.php"?>
@@ -116,7 +213,7 @@
     }
     
     input:checked + .slider {
-        background-color: <?= $permission['sidebar_color'] ?> !important;
+        background-color: <?= $config_setting['sidebar_color'] ?> !important;
     }
     
     input:checked + .slider:before {
@@ -151,7 +248,9 @@
                         </div>
                         <?php unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
                     <?php } ?>
-                    <form action="configuration.php" method="post" enctype="multipart/form-data">
+                    <form action="permission.php?id=<?php echo isset($_GET['id']) ? (int) $_GET['id'] : 0; ?>" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="userole_id" value="<?= $userole_id ?>">
+                        <input type="hidden" name="permission_id" value="<?= $permission_id ?>">
                         <h5 class="mb-3 fw-bold text-title text-right">Permission Settings</h5>
                         <div class="row mt-2">
                             <div class="table-responsive">
@@ -159,6 +258,7 @@
                                     <thead>
                                         <tr>
                                             <th>Menu Name</th>
+                                            <th class="text-center">Display</th>
                                             <th class="text-center">Create</th>
                                             <th class="text-center">Read</th>
                                             <th class="text-center">Update</th>
@@ -167,28 +267,80 @@
                                     </thead>
                                     <tbody>
                                         <tr>
+                                            <td>Slideshow</td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="slideshow" value="1" <?php echo ($permission['slideshow'] == 1) ? 'checked' : ''; ?>>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center"></td>
+                                            <td class="text-center"></td>
+                                            <td class="text-center"></td>
+                                            <td class="text-center"></td>
+                                        </tr>
+                                        <tr>
                                             <td>Dashboard</td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="user_edit">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Products</td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="product_display" <?php echo ($permission['product_display'] == 1) ? 'checked' : ''; ?>>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="product_create" <?php echo ($permission['product_create'] == 1) ? 'checked' : ''; ?>>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="product_read" <?php echo ($permission['product_read'] == 1) ? 'checked' : ''; ?>>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="product_update" <?php echo ($permission['product_update'] == 1) ? 'checked' : ''; ?>>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="product_delete" <?php echo ($permission['product_delete'] == 1) ? 'checked' : ''; ?>>
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
@@ -197,25 +349,31 @@
                                             <td>Sales</td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
@@ -224,25 +382,31 @@
                                             <td>Purchase</td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
@@ -251,25 +415,40 @@
                                             <td>Expenses</td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="switch">
-                                                    <input type="checkbox" name="user_edit" value="1" checked>
+                                                    <input type="checkbox" name="user_edit" value="1">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="user_edit" value="1">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Report</td>
+                                            <td class="text-center">
+                                                <label class="switch">
+                                                    <input type="checkbox" name="report_display" <?php echo ($permission['report_display'] == 1) ? 'checked' : ''; ?>>
                                                     <span class="slider"></span>
                                                 </label>
                                             </td>
@@ -279,7 +458,7 @@
                             </div>
                         </div>
                         <div class="mt-4 text-end">
-                            <input type="submit" name="submit" value="Update" class="btn btn-success">
+                            <input type="submit" name="submit" value="Update" class="btn btn-success" style="background-color: <?= $config_setting['sidebar_color'] ?> !important; border-color: <?= $config_setting['sidebar_color'] ?> !important;">
                         </div>
                     </form>
                 </div>

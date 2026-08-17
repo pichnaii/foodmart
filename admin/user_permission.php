@@ -1,6 +1,19 @@
 <?php 
     include 'include/dbconnection.php';
 
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: login.php');
+        exit();
+    }
+
+    // Authorization
+    if ($_SESSION['user_role'] !== 'admin') {
+        $_SESSION['message'] = 'Access denied...!';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: index.php');
+        exit();
+    }
+
     // Delete Product
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
         $delete_id = $_POST['delete_id'];

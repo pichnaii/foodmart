@@ -1,4 +1,7 @@
-<?php require_once 'include/dbconnection.php'; ?>
+<?php 
+    require_once 'include/dbconnection.php';
+    $isAdmin    = isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <?php include "include/header.php"?>
@@ -47,12 +50,17 @@
                             <div class="my-2">
                                 <a href="company.php" class="fs-5"><i class="fa fa-building pe-1"></i>Company</a>
                             </div>
-                            <div class="my-2">
-                                <a href="permission.php" class="fs-5"><i class="bi bi-person-circle pe-1"></i>Supplier</a>
-                            </div>
-                            <div class="my-2">
-                                <a href="#" class="fs-5"><i class="bi bi-house-door-fill pe-1"></i>Warehouse</a>
-                            </div>
+                            <?php if ($isAdmin) { ?>
+                                <div class="my-2">
+                                    <a href="user.php" class="fs-5"><i class="bi bi-person pe-1"></i>User</a>
+                                </div>
+                                <div class="my-2">
+                                    <a href="user_permission.php" class="fs-5"><i class="bi bi-people pe-1"></i>User Roles</a>
+                                </div>
+                                <div class="my-2">
+                                    <a href="configuration.php" class="fs-5"><i class="fa fa-wrench pe-1"></i>Configuration</a>
+                                </div>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>

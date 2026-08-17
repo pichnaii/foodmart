@@ -13,6 +13,7 @@
                         WHERE status != 0
                     ";
     $totalProduct = $conn->query($totalProducts)->fetch_assoc();
+    $totalRevenue = $totalProduct['price'] - $totalProduct['cost'];
 
     // get purchase today
     $purchasestodays = "SELECT 
@@ -37,6 +38,16 @@
                                     AND LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
                             ";
     $purchaseslastmonth = $conn->query($purchaseslastmonths)->fetch_assoc();
+
+    $currencyCode = 'USD';
+    function format_currency($amount, $currencyCode = 'USD') {
+        $amount = (float)($amount ?? 0);
+        if (class_exists('NumberFormatter')) {
+            $formatter = new NumberFormatter('en_US', NumberFormatter::CURRENCY);
+            return $formatter->formatCurrency($amount, $currencyCode);
+        }
+        return '$' . number_format($amount, 2);
+    }
 
     $conn->close();
 ?>

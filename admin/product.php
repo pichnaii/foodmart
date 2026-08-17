@@ -1,8 +1,25 @@
 <?php 
     include 'include/dbconnection.php';
 
+    // Authorization: ensure current user can view products
+    $isAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin';
+    if (!$isAdmin && (!isset($_SESSION['product_display']) || $_SESSION['product_display'] != 1)) {
+        $_SESSION['message'] = 'Access denied: you do not have permission to view products.';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: index.php');
+        exit();
+    }
+
     // Delete Product
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+        // server-side permission check for delete
+        if (!$isAdmin && (!isset($_SESSION['product_delete']) || $_SESSION['product_delete'] != 1)) {
+            $_SESSION['message'] = 'Access denied: you do not have permission to delete products.';
+            $_SESSION['message_type'] = 'danger';
+            header('Location: product.php');
+            exit();
+        }
+
         $delete_id = $_POST['delete_id'];
         $stmt = $conn->prepare("SELECT image_path FROM products WHERE id = ?");
         $stmt->bind_param("i", $delete_id);
@@ -40,14 +57,14 @@
                             units.name AS unit_name,
                             products.price AS product_price,
                             products.cost AS product_cost,
-                            purchase_items.quantity AS quantity,
+                            products.quantity AS quantity,
                             products.status AS status,
                             categories.id AS category_id,
                             categories.name AS category_name
                         FROM products
                         LEFT JOIN categories ON products.category_id = categories.id
                         LEFT JOIN units ON products.unit_id = units.id
-                        LEFT JOIN purchase_items ON products.id = purchase_items.product_id
+                        ORDER BY products.id DESC
                     ";
     $result = $conn->query($product_query);
 ?>
@@ -70,12 +87,12 @@
             <div class="container-fluid pt-3 px-3">
                 <div class="bg-light text-center rounded p-4">
                     <div class="d-flex align-items-center justify-content-between mb-0">
-                        <!-- <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#add">
-                            <i class="fas fa-plus"></i> Add Product
-                        </button> -->
-                        <a href="add_product.php" class="btn btn-primary mb-3">
-                            <i class="fas fa-plus"></i> Add Product
-                        </a>
+                        <!-- Add Product button: render only if user can create -->
+                        <?php if ($isAdmin || (isset($_SESSION['product_create']) && $_SESSION['product_create'] == 1)) { ?>
+                            <a href="add_product.php" class="btn btn-primary mb-3">
+                                <i class="fas fa-plus"></i> Add Product
+                            </a>
+                        <?php } ?>
                         <h5 class="mb-0 fw-bold text-title">Products List</h5>
                     </div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
@@ -134,21 +151,6 @@
                                     <td class="text-center"><?= $row['quantity'] ?><span class="ps-1 text-primary fs-6"><?= $row['unit_name'] ?></span></td>
                                     <td class="text-center"><span class="badge-<?= $row['status'] == "1" ? "purple" : "red" ?>"><?= $row['status'] == 1 ? "Active"  : "Inactive" ?></span></td>
                                     <td class="text-center">
-                                        <!-- for modal edit -->
-                                        <a href="#" class="edit-btn d-none"
-                                            data-id="<?= $row['product_id'] ?>" 
-                                            data-code="<?= $row['product_code'] ?>" 
-                                            data-name="<?= $row['product_name'] ?>" 
-                                            data-unit="<?= $row['unit_name'] ?>" 
-                                            data-price="<?= $row['product_price'] ?>" 
-                                            data-cost="<?= $row['product_cost'] ?>" 
-                                            data-category="<?= $row['category_id'] ?>"
-                                            data-status="<?= $row['status'] ?>"
-                                            data-image="<?= htmlspecialchars($row['product_image']) ?>"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#EditProduct">
-                                            <i class="bi bi-pencil-square fs-4 cursor-pointer"></i>
-                                        </a>
                                         <a href="edit_product.php?id=<?= $row['product_id'] ?>" class="edit-btn">
                                             <i class="bi bi-pencil-square fs-4 cursor-pointer"></i>
                                         </a>
@@ -172,190 +174,6 @@
 		</div>
 		<?php include "include/foot.php"?>
 	</div>
-
-    <!-- Add Products -->
-    <div class="modal fade" id="add" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addModalLabel">Add Products</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="product.php" method="post" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <?php 
-                                        $newcode = str_pad(mt_rand(0, 99999999), 8, '0', STR_PAD_LEFT);
-
-                                        // Generate a new random code when requested via AJAX
-                                        // if (isset($_GET['generate_code'])) {
-                                        //     $newcode = str_pad(mt_rand(0, 99999999), 8, '0', STR_PAD_LEFT);
-                                        //     echo $newcode;
-                                        //     exit; // Stop further execution after returning the code
-                                        // }
-                                    ?>
-                                </div>
-                                <label for="code">Code</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="code" name="code" placeholder="General By System..." readonly>
-                                    <button type="button" class="btn btn-primary" id="generateCode">
-                                        <i class="fa fa-sync"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="name">Product Name</label>
-                                    <input type="text" class="form-control" id="name" name="name">
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-sm-12">
-                                <div class="form-group">
-                                    <label>Category</label>
-                                    <select id="categorySelect" class="form-select" name="category">
-                                        <option value="all">All Categories</option>
-                                        <?php
-                                            if ($category->num_rows > 0) {
-                                                while($row = $category->fetch_assoc()) {
-                                                    echo "<option value='" . $row['id'] . "'>" . htmlspecialchars($row['name']) . "</option>";
-                                                } 
-                                            } else {
-                                                echo '<option value="">No Data Display</option>';
-                                            }
-                                        ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="unit">Unit</label>
-                                    <input type="text" class="form-control" id="unit" name="unit">
-                                </div>
-                            </div>
-                            <?php if($product_cost == true) { ?>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="cost">cost</label>
-                                        <input type="text" class="form-control" id="cost" name="cost">
-                                    </div>
-                                </div>
-                            <?php } ?>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="price">Price</label>
-                                    <input type="text" class="form-control" id="price" name="price">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="discount">Product Image</label>
-                                    <input type="file" class="form-control" name="image" accept="image/*">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <input type="submit" name="addproduct" value="Submit" class="btn btn-primary">
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Product -->
-    <div class="modal fade" id="EditProduct" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Product</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="product.php" method="post" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        <input type="hidden" name="update_id" id="update_id">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="edit_code">Code</label>
-                                    <input type="text" class="form-control" id="edit_code" name="code">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="edit_name">Product Name</label>
-                                    <input type="text" class="form-control" id="edit_name" name="name" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-sm-12">
-                                <div class="form-group">
-                                    <label>Category</label>
-                                    <select class="form-select" name="category" id="edit_category">
-                                        <?php
-                                            $editCategory = new mysqli($servername, $username, $password, $dbname);
-                                            $cat_result = $editCategory->query('SELECT * FROM categories');
-                                            if ($cat_result->num_rows > 0) {
-                                                while($cat = $cat_result->fetch_assoc()) {
-                                                    echo "<option value='" . htmlspecialchars($cat['id']) . "'>" . htmlspecialchars($cat['name']) . "</option>";
-                                                }
-                                            } else {
-                                                echo '<option value="">No Data Display</option>';
-                                            }
-                                            $editCategory->close();
-                                        ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="edit_unit">Unit</label>
-                                    <input type="text" class="form-control" id="edit_unit" name="unit">
-                                </div>
-                            </div>
-                            <?php if($product_cost == true) { ?>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="edit_cost">Cost</label>
-                                        <input type="text" class="form-control" id="edit_cost" name="cost" required>
-                                    </div>
-                                </div>
-                            <?php } ?>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="edit_price">Price</label>
-                                    <input type="text" class="form-control" id="edit_price" name="price" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-sm-12">
-                                <div class="form-group">
-                                    <label>Status</label>
-                                    <select class="form-select" name="status" id="edit_status">
-                                        <option value="1">Active</option>
-                                        <option value="0">Inactive</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="edit_image">Product Image</label>
-                                    <input type="file" class="form-control" id="edit_image" name="image" accept="image/*">
-                                    <div class="mb-2">
-                                        <img class="mt-2" id="edit_image_preview" src="https://i.pinimg.com/1200x/5b/f7/22/5bf722d58d3497843454d4f31b5ec224.jpg" alt="Product Preview" style="width:27rem;height:auto;object-fit:cover;border-radius:4px;border:2px solid #ddd;">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" name="updateProduct" class="btn btn-primary">Update</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="delete" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
@@ -381,29 +199,6 @@
 
     <script>
         $(document).ready(function() {
-            $('.edit-btn').on('click', function() {
-                var id = $(this).data('id');
-                var code = $(this).data('code');
-                var name = $(this).data('name');
-                var unit = $(this).data('unit');
-                var price = $(this).data('price');
-                var cost = $(this).data('cost');
-                var category = $(this).data('category');
-                var status = $(this).data('status');
-                var image = $(this).data('image');
-
-                $('#update_id').val(id);
-                $('#edit_code').val(code);
-                $('#edit_name').val(name);
-                $('#edit_unit').val(unit);
-                $('#edit_price').val(price);
-                $('#edit_cost').val(cost);
-                $('#edit_category').val(category);
-                $('#edit_status').val(status);
-                var previewSrc = image ? 'images/uploads/' + image : 'images/uploads/no-image.png';
-                $('#edit_image_preview').attr('src', previewSrc);
-            });
-
             $('#edit_image').on('change', function(e) {
                 var file = this.files && this.files[0];
                 if (file) {
@@ -418,11 +213,6 @@
             $('.delete-btn').on('click', function() {
                 var id = $(this).data('id');
                 $('#delete_id').val(id);
-            });
-
-            $('#generateCode').on('click', function() {
-                let newCode = '<?= $newcode; ?>';
-                $('#code').val(newCode);
             });
 
             $('#productSearch').on('keyup', function() {

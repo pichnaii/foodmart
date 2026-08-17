@@ -1,5 +1,15 @@
 <?php 
     include 'include/dbconnection.php';
+
+    // Authorization: ensure current user can create products
+    $isAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin';
+    if (!$isAdmin && (!isset($_SESSION['product_create']) || $_SESSION['product_create'] != 1)) {
+        $_SESSION['message'] = 'Access denied: you do not have permission to create products.';
+        $_SESSION['message_type'] = 'danger';
+        header('Location: product.php');
+        exit();
+    }
+
     // Add Product
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addproduct']) == TRUE){
         // $code = str_pad(mt_rand(0, 99999999), 8, '0', STR_PAD_LEFT);
@@ -8,6 +18,7 @@
         $price = $_POST['price'];
         $cost = $_POST['cost'];
         $status = $_POST['status'];
+        $discount = $_POST['discount'] ?? 0;
 
         // category id and name
         $category_id = (int)$_POST['category'];
@@ -49,8 +60,8 @@
             $targetFilePath = $targetDir . $encryptedName;
 
             if (move_uploaded_file($image['tmp_name'], $targetFilePath)) {
-                $stmt = $conn->prepare("INSERT INTO products (code, name, price,cost, unit_id, unit, category_id, category_name, status, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("ssssisisis", $code, $name, $price, $cost, $unit_id, $unit, $category_id, $category_name, $status, $encryptedName);
+                $stmt = $conn->prepare("INSERT INTO products (code, name, price,cost, unit_id, unit, category_id, category_name, status, discount, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("ssssisisiss", $code, $name, $price, $cost, $unit_id, $unit, $category_id, $category_name, $status, $discount, $encryptedName);
 
                 if ($stmt->execute()) {
                     $_SESSION['message'] = 'Product added successfully!';
@@ -64,8 +75,8 @@
                 exit();
 
             } else {
-                $stmt = $conn->prepare("INSERT INTO products (code, name, price, cost, unit_id, unit, category_id, category_name, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("ssssisiss", $code, $name, $price, $cost, $unit_id, $unit, $category_id, $category_name, $status);
+                $stmt = $conn->prepare("INSERT INTO products (code, name, price, cost, unit_id, unit, category_id, category_name, status, discount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("ssssisisss", $code, $name, $price, $cost, $unit_id, $unit, $category_id, $category_name, $status, $discount);
             }
         }
 
@@ -175,7 +186,13 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Status</label>
+                                    <label for="discount" class="mb-1">Discount (%)</label>
+                                    <input type="text" class="form-control" name="discount">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="mb-1">Status</label>
                                     <select class="form-select" name="status" id="edit_status">
                                         <option value="1">Active</option>
                                         <option value="0">Inactive</option>

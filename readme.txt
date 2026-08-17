@@ -176,3 +176,6 @@ CREATE TABLE user_roles (
     description TEXT NULL,
     status INT(11)
 )
+
+ALTER TABLE user_permission
+ADD COLUMN product_display INT(11) AFTER slideshow;

@@ -1,14 +1,15 @@
 <?php
     require_once 'include/dbconnection.php';
 
-    // Add category
+    // Add Category
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addcategory']) == TRUE){
         $code = $_POST['code'];
         $name = $_POST['name'];
         $created_date = $_POST['created_date'];
+        $pos_display = $_POST['pos_display'];
 
-        $stmt = $conn->prepare("INSERT INTO categories (code, name, created_date) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $code, $name, $created_date);
+        $stmt = $conn->prepare("INSERT INTO categories (code, name, created_date, pos_display) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sssi", $code, $name, $created_date, $pos_display);
 
         if ($stmt->execute()) {
             $_SESSION['message'] = 'Product added Successfully!';
@@ -22,18 +23,19 @@
         exit();
     }
 
-    // Update user
+    // Update Category
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
         $update_id = $_POST['update_id'];
         $code = $_POST['code'];
         $name = $_POST['name'];
         $created_date = $_POST['created_date'];
+        $pos_display = $_POST['pos_display'];
 
-        $stmt = $conn->prepare("UPDATE categories SET code = ?, name = ?, created_date = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE categories SET code = ?, name = ?, created_date = ?, pos_display = ? WHERE id = ?");
         if ($stmt === false) {
             die('Prepare failed: ' . htmlspecialchars($conn->error));
         }
-        $stmt->bind_param("sssi", $code, $name, $created_date, $update_id);
+        $stmt->bind_param("sssii", $code, $name, $created_date, $pos_display, $update_id);
         
         if ($stmt->execute()) {
             $_SESSION['message'] = 'Category updated Successfully!';
@@ -48,7 +50,7 @@
         exit();
     }
 
-    // Delete Product
+    // Delete Category
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
         $delete_id = $_POST['delete_id'];
         $stmt = $conn->prepare("DELETE FROM categories WHERE id = ?");
@@ -116,6 +118,7 @@
                                     <th>Date</th>
                                     <th>Code</th>
                                     <th>Category Name</th>
+                                    <th>POS Display</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -131,11 +134,17 @@
                                     <td class="text-center"><?= $row['code'] ?></td>
                                     <td><?= $row['name'] ?></td>
                                     <td class="text-center">
+                                        <span class="text-light text-uppercase btn-sm btn-<?= ($row['pos_display'] == 1) ? 'success' : 'danger'?>">
+                                            <?= ($row['pos_display'] == 1) ? 'Yes' : 'No' ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
                                         <a class="edit-btn" 
                                             data-id="<?= $row['id'] ?>" 
                                             data-code="<?= $row['code'] ?>" 
                                             data-name="<?= $row['name'] ?>" 
-                                            data-created_date="<?= $row['created_date'] ?>" 
+                                            data-created_date="<?= $row['created_date'] ?>"
+                                            data-display="<?= $row['pos_display'] ?>"
                                             data-bs-toggle="modal" 
                                             data-bs-target="#EditUser">
                                             <i class="bi bi-pencil-square cursor-pointer fs-4"></i>
@@ -190,6 +199,15 @@
                                     <input type="text" class="form-control" id="name" name="name">
                                 </div>
                             </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="pos_display">POS Display</label>
+                                    <select class="form-select" id="pos_display" name="pos_display" aria-label="Select Display">
+                                        <option value="1">Yes</option>
+                                        <option value="0">No</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -206,7 +224,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Product</h5>
+                    <h5 class="modal-title" id="editModalLabel">Edit Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="" method="post">
@@ -229,6 +247,15 @@
                                 <div class="form-group">
                                     <label for="edit_name">Name</label>
                                     <input type="text" class="form-control" id="edit_name" name="name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="edit_display">POS Display</label>
+                                    <select class="form-select" id="edit_display" name="pos_display" aria-label="Select Display">
+                                        <option value="1">Yes</option>
+                                        <option value="0">No</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -271,11 +298,13 @@
                 var code = $(this).data('code');
                 var name = $(this).data('name');
                 var date = $(this).data('created_date');
+                var display = $(this).data('display');
                 
                 $('#update_id').val(id);
                 $('#edit_code').val(code);
                 $('#edit_name').val(name);
                 $('#edit_created_date').val(date);
+                $('#edit_display').val(display);
             });
 
             $('.delete-btn').click(function() {

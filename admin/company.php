@@ -1,10 +1,8 @@
 <?php
     require_once 'include/dbconnection.php';
 
-    // Add currency
+    // Add Company
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addCompany']) == TRUE){
-
-        $logo           = $_POST['logo'];
         $code           = $_POST['code'];
         $name           = $_POST['name'];
         $local_name     = $_POST['local_name'];
@@ -19,7 +17,6 @@
 
         $stmt = $conn->prepare("INSERT INTO company 
                                 (
-                                    logo,
                                     code, 
                                     name, 
                                     local_name, 
@@ -31,10 +28,9 @@
                                     note, 
                                     created_date,
                                     updated_date
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             ");
-        $stmt->bind_param("ssssssssssss", 
-                            $logo,
+        $stmt->bind_param("sssssssssss", 
                             $code, 
                             $name, 
                             $local_name, 
@@ -61,192 +57,78 @@
     }
 
     // Update Company
-    // if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCompany']) == TRUE) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCompany']) == TRUE) {
+        $update_id      = $_POST['update_id'];
+        $code           = $_POST['code'];
+        $name           = $_POST['name'];
+        $local_name     = $_POST['local_name'];
+        $address        = $_POST['address'];
+        $local_address  = $_POST['local_address'];
+        $phone          = $_POST['phone'];
+        $email          = $_POST['email'];
+        $vat            = $_POST['vat'];
+        $note           = $_POST['note'];
+        $updated_date   = $_POST['updated_date'];
 
-    //     $update_id      = $_POST['update_id'];
-    //     $logo           = $_POST['logo'];
-    //     $code           = $_POST['code'];
-    //     $name           = $_POST['name'];
-    //     $local_name     = $_POST['local_name'];
-    //     $address        = $_POST['address'];
-    //     $local_address  = $_POST['local_address'];
-    //     $phone          = $_POST['phone'];
-    //     $email          = $_POST['email'];
-    //     $vat            = $_POST['vat'];
-    //     $note           = $_POST['note'];
-    //     $updated_date   = $_POST['updated_date'];
+        // Fetch created_date from database
+        $stmtCheck = $conn->prepare("SELECT created_date FROM company WHERE id = ?");
+        $stmtCheck->bind_param("i", $update_id);
+        $stmtCheck->execute();
+        $stmtCheck->bind_result($created_date);
+        $stmtCheck->fetch();
+        $stmtCheck->close();
 
-    //     // ✅ Fetch created_date from DB first
-    //     $stmtCheck = $conn->prepare("SELECT created_date FROM company WHERE id = ?");
-    //     $stmtCheck->bind_param("i", $update_id);
-    //     $stmtCheck->execute();
-    //     $stmtCheck->bind_result($created_date);
-    //     $stmtCheck->fetch();
-    //     $stmtCheck->close();
+        // Convert to DateTime for comparison
+        $dtCreated = new DateTime($created_date);
+        $dtUpdated = new DateTime($updated_date);
 
-    //     // ✅ Convert to DateTime for comparison
-    //     $dtCreated = new DateTime($created_date);
-    //     $dtUpdated = new DateTime($updated_date);
+        // Validate: updated_date cannot be before created_date
+        if ($dtUpdated < $dtCreated) {
+            $_SESSION['message']      = 'Updated date cannot be earlier than created date (' . $dtCreated->format('d/m/Y') . ').';
+            $_SESSION['message_type'] = 'danger';
+            header('Location: company.php');
+            exit();
+        }
 
-    //     // ✅ Validate: updated_date cannot be before created_date
-    //     if ($dtUpdated < $dtCreated) {
-    //         $_SESSION['message']      = 'Updated date cannot be earlier than created date (' . $dtCreated->format('d/m/Y') . ').';
-    //         $_SESSION['message_type'] = 'danger';
-    //         header('Location: company.php');
-    //         exit();
-    //     }
-
-    //     $stmt = $conn->prepare("UPDATE company SET 
-    //                                 logo = ?,
-    //                                 code = ?, 
-    //                                 name = ?, 
-    //                                 local_name = ?, 
-    //                                 address = ?,
-    //                                 local_address = ?,
-    //                                 phone = ?,
-    //                                 email = ?,
-    //                                 vat = ?,
-    //                                 note = ?, 
-    //                                 updated_date = ? 
-    //                             WHERE id = ?
-    //                         ");
-    //     $stmt->bind_param("sssssssssssi", 
-    //                         $logo,
-    //                         $code, 
-    //                         $name, 
-    //                         $local_name, 
-    //                         $address, 
-    //                         $local_address,
-    //                         $phone,
-    //                         $email,
-    //                         $vat,
-    //                         $note, 
-    //                         $updated_date,
-    //                         $update_id
-    //                     );
+        $stmt = $conn->prepare("UPDATE company SET 
+                                    code = ?, 
+                                    name = ?, 
+                                    local_name = ?, 
+                                    address = ?,
+                                    local_address = ?,
+                                    phone = ?,
+                                    email = ?,
+                                    vat = ?,
+                                    note = ?, 
+                                    updated_date = ? 
+                                WHERE id = ?
+                            ");
+        $stmt->bind_param("ssssssssssi", 
+                            $code, 
+                            $name, 
+                            $local_name, 
+                            $address, 
+                            $local_address,
+                            $phone,
+                            $email,
+                            $vat,
+                            $note, 
+                            $updated_date,
+                            $update_id
+                        );
         
-    //     if ($stmt->execute()) {
-    //         $_SESSION['message'] = 'Warehouse updated Successfully!';
-    //         $_SESSION['message_type'] = 'success';
-    //     } else {
-    //         $_SESSION['message'] = 'Warehouse update Unsuccessful! Error: ' . $stmt->error;
-    //         $_SESSION['message_type'] = 'danger';
-    //     }
-    //     $stmt->close();
+        if ($stmt->execute()) {
+            $_SESSION['message'] = 'Company updated Successfully!';
+            $_SESSION['message_type'] = 'success';
+        } else {
+            $_SESSION['message'] = 'Company update Unsuccessful! Error: ' . $stmt->error;
+            $_SESSION['message_type'] = 'danger';
+        }
+        $stmt->close();
     
-    //     header('Location: company.php');
-    //     exit();
-    // }
-
-    // if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateCompany']) == TRUE) {
-
-    //     $update_id      = (int)$_POST['update_id'];
-    //     $code           = trim($_POST['code'] ?? '');
-    //     $name           = trim($_POST['name'] ?? '');
-    //     $local_name     = trim($_POST['local_name'] ?? '');
-    //     $address        = trim($_POST['address'] ?? '');
-    //     $local_address  = trim($_POST['local_address'] ?? '');
-    //     $phone          = trim($_POST['phone'] ?? '');
-    //     $email          = trim($_POST['email'] ?? '');
-    //     $vat            = trim($_POST['vat'] ?? '');
-    //     $note           = trim($_POST['note'] ?? '');
-    //     $updated_date   = trim($_POST['updated_date'] ?? '');
-
-    //     // Fetch old logo and created_date
-    //     $stmt = $conn->prepare("SELECT logo, created_date FROM company WHERE id = ?");
-    //     $stmt->bind_param("i", $update_id);
-    //     $stmt->execute();
-    //     $stmt->bind_result($oldImage, $created_date);
-    //     $stmt->fetch();
-    //     $stmt->close();
-
-    //     $logo = $oldImage;  // Keep old logo by default
-
-    //     // Handle logo upload
-    //     if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK && $_FILES['logo']['size'] > 0) {
-            
-    //         $image = $_FILES['logo'];
-            
-    //         // Basic validation (improve this!)
-    //         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    //         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    //         $mime = finfo_file($finfo, $image['tmp_name']);
-    //         finfo_close($finfo);
-
-    //         if (!in_array($mime, $allowedTypes)) {
-    //             $_SESSION['message'] = 'Invalid file type! Only images allowed.';
-    //             $_SESSION['message_type'] = 'danger';
-    //             header('Location: company.php');
-    //             exit();
-    //         }
-
-    //         $ext = strtolower(pathinfo($image['name'], PATHINFO_EXTENSION));
-    //         $imageName = md5(uniqid(rand(), true)) . '.' . $ext;   // Better unique name
-    //         $imagePath = "images/uploads/users/";                  // Trailing slash
-    //         $targetFile = $imagePath . $imageName;
-
-    //         if (move_uploaded_file($image['tmp_name'], $targetFile)) {
-    //             // Delete old image if exists
-    //             if (!empty($oldImage)) {
-    //                 $oldImageFullPath = $imagePath . $oldImage;
-    //                 if (file_exists($oldImageFullPath)) {
-    //                     unlink($oldImageFullPath);
-    //                 }
-    //             }
-    //             $logo = $imageName;
-    //         } else {
-    //             $_SESSION['message'] = 'Failed to upload logo!';
-    //             $_SESSION['message_type'] = 'danger';
-    //             header('Location: company.php');
-    //             exit();
-    //         }
-    //     }
-
-    //     // Date validation
-    //     if (!empty($updated_date) && !empty($created_date)) {
-    //         try {
-    //             $dtCreated = new DateTime($created_date);
-    //             $dtUpdated = new DateTime($updated_date);
-
-    //             if ($dtUpdated < $dtCreated) {
-    //                 $_SESSION['message'] = 'Updated date cannot be earlier than created date (' . $dtCreated->format('d/m/Y') . ').';
-    //                 $_SESSION['message_type'] = 'danger';
-    //                 header('Location: company.php');
-    //                 exit();
-    //             }
-    //         } catch (Exception $e) {
-    //             $_SESSION['message'] = 'Invalid date format.';
-    //             $_SESSION['message_type'] = 'danger';
-    //             header('Location: company.php');
-    //             exit();
-    //         }
-    //     }
-
-    //     // Update query
-    //     $stmt = $conn->prepare("UPDATE company SET 
-    //                                 logo = ?, code = ?, name = ?, local_name = ?, 
-    //                                 address = ?, local_address = ?, phone = ?, 
-    //                                 email = ?, vat = ?, note = ?, updated_date = ? 
-    //                             WHERE id = ?");
-
-    //     $stmt->bind_param("sssssssssssi", 
-    //         $logo, $code, $name, $local_name, $address, 
-    //         $local_address, $phone, $email, $vat, $note, 
-    //         $updated_date, $update_id
-    //     );
-
-    //     if ($stmt->execute()) {
-    //         $_SESSION['message'] = 'Company updated successfully!';
-    //         $_SESSION['message_type'] = 'success';
-    //     } else {
-    //         $_SESSION['message'] = 'Update failed! Error: ' . $stmt->error;
-    //         $_SESSION['message_type'] = 'danger';
-    //     }
-    //     $stmt->close();
-
-    //     header('Location: company.php');
-    //     exit();
-    // }
+        header('Location: company.php');
+        exit();
+    }
 
     // Delete Company
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete']) == TRUE) {
@@ -360,9 +242,8 @@
                                             data-email="<?= $row['email'] ?>" 
                                             data-vat="<?= $row['vat'] ?>" 
                                             data-note="<?= $row['note'] ?>" 
-                                            data-updated_date="<?= $row['updated_date'] ?>"
                                             data-bs-toggle="modal" 
-                                            data-bs-target="#EditWarehouse">
+                                            data-bs-target="#EditCompany">
                                             <i class="bi bi-pencil-square cursor-pointer fs-4"></i>
                                         </a>
                                         <a class="delete-btn" data-id="<?= $row['id'] ?>" data-bs-toggle="modal" data-bs-target="#delete">
@@ -409,12 +290,12 @@
                                     <input type="date" class="form-control" name="updated_date" value="<?= date('Y-m-d') ?>">
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <!-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="logo">Logo</label>
                                     <input type="file" class="form-control" name="logo" accept="image/*">
                                 </div>
-                            </div>
+                            </div> -->
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="code">Code</label>
@@ -481,27 +362,21 @@
     </div>
 
     <!-- Edit Company -->
-    <div class="modal fade" id="EditWarehouse" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal fade" id="EditCompany" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Supplier</h5>
+                    <h5 class="modal-title" id="editModalLabel">Edit Company</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="" method="post">
                     <div class="modal-body">
                         <input type="hidden" name="update_id" id="update_id">
                         <div class="row g-3">
-                            <div class="col-md-6 d-none">
-                                <div class="form-group">
-                                    <label for="date">Created Date</label>
-                                    <input type="date" class="form-control" id="edit_created_date" name="created_date">
-                                </div>
-                            </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="date">Updated Date</label>
-                                    <input type="date" class="form-control" id="edit_updated_date" name="updated_date">
+                                    <input type="date" class="form-control" id="date" name="updated_date" value="<?= date('Y-m-d') ?>">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -525,7 +400,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="local_name">Local Name</label>
-                                    <input type="text" class="form-control" id="edit_name" name="local_name">
+                                    <input type="text" class="form-control" id="edit_local_name" name="local_name">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -549,19 +424,19 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="address">Address</label>
-                                    <textarea class="form-control" id="edit_address" name="address"></textarea>
+                                    <textarea class="form-control" id="edit_address" name="address" style="height: 120px;"></textarea>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="address">Local Dddress</label>
-                                    <textarea class="form-control" id="edit_local_address" name="local_address"></textarea>
+                                    <textarea class="form-control" id="edit_local_address" name="local_address" style="height: 120px;"></textarea>
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="note">Description</label>
-                                    <textarea class="form-control" id="edit_note" name="note"></textarea>
+                                    <textarea class="form-control" id="edit_note" name="note" style="height: 120px;"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -610,7 +485,6 @@
                 var phone = $(this).data('phone');
                 var vat = $(this).data('vat');
                 var note = $(this).data('note');
-                var date = $(this).data('updated_date');
             
                 $('#update_id').val(id);
                 $('#edit_code').val(code);
@@ -622,7 +496,6 @@
                 $('#edit_email').val(email);
                 $('#edit_vat').val(vat);
                 $('#edit_note').val(note);
-                $('#edit_updated_date').val(date);
             });
 
             $('.delete-btn').click(function() {
