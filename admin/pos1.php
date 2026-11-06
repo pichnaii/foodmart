@@ -65,7 +65,7 @@
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 $row['id']          = (int)$row['id'];
-                $row['code']        = (int)$row['code'];
+                $row['code']        = (string)$row['code'];
                 $row['category_id'] = (int)$row['category_id'];
                 $row['price']       = (float)$row['price'];
                 $row['status']      = (bool)$row['status'];

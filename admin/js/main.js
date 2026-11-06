@@ -69,24 +69,24 @@
     var myChart1 = new Chart(ctx1, {
         type: "bar",
         data: {
-            labels: ["2016", "2017", "2018", "2019", "2020", "2021", "2022"],
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Set", "Oct", "Nov", "Dec"],
             datasets: [{
                     label: "Sale",
-                    data: [15, 30, 55, 65, 60, 80, 95],
+                    data: [15, 30, 55, 65, 60, 80, 95, 60, 62, 54, 34, 24],
                     backgroundColor: "rgba(43, 187, 14, 0.7)"
                 },
                 {
                     label: "Purchase",
-                    data: [8, 35, 40, 60, 70, 55, 75],
+                    data: [8, 35, 40, 60, 70, 55, 75, 60, 62, 54, 34, 24],
                     backgroundColor: "rgba(50, 4, 190, 0.7)"
                 },
                 {
                     label: "Expense",
-                    data: [12, 25, 45, 55, 65, 70, 60],
+                    data: [12, 25, 45, 55, 65, 70, 60, 68, 62, 54, 34, 24],
                     backgroundColor: "rgb(255, 98, 0.7)"
                 }
             ]
-            },
+        },
         options: {
             responsive: true
         }

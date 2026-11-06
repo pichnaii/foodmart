@@ -14,6 +14,8 @@
 
         $transaction_date = $_POST['create_date'];
         $transaction_type = 'Purchase';
+        $transaction_id   = $purchase_id;  
+        $created_at       = date('Y-m-d');
 
         // company id and name
         $company_id = (int)$_POST['company'];
@@ -73,26 +75,6 @@
         // Use transaction: insert into purchases then purchase_items
         $conn->begin_transaction();
 
-        // Balance Sheet
-        $stmtBalanceSheet = $conn->prepare("INSERT INTO balance_sheet (transaction_date, company_id, warehouse_id, transaction_type, amount, cost) VALUES (?, ?, ?, ?, ?, ?)");
-        if (!$stmtBalanceSheet) {
-            $conn->rollback();
-            $_SESSION['message'] = 'Prepare failed (Balance Sheet): ' . $conn->error;
-            $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
-            exit();
-        }
-        $stmtBalanceSheet->bind_param("siissd", $transaction_date, $company_id, $warehouse_id, $transaction_type, $amount, $cost);
-        if (!$stmtBalanceSheet->execute()) {
-            $stmtBalanceSheet->close();
-            $conn->rollback();
-            $_SESSION['message'] = 'Insert failed (Balance Sheet)' . $stmtBalanceSheet->error;
-            $_SESSION['message_type'] = 'danger';
-            header('Location: add_purchase.php');
-            exit();
-        }
-        $stmtBalanceSheet->close();
-
         // Purchase 
         $stmt = $conn->prepare("INSERT INTO purchases 
                                 (
@@ -150,6 +132,42 @@
         }
         $purchase_id = $conn->insert_id;
         $stmt->close();
+
+        // Balance Sheet
+        $stmtBalanceSheet = $conn->prepare("
+            INSERT INTO balance_sheet 
+            (reference_no, transaction_date, company_id, supplier_id, warehouse_id, transaction_id, transaction_type, amount, cost, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmtBalanceSheet) {
+            $conn->rollback();
+            $_SESSION['message'] = 'Prepare failed (Balance Sheet): ' . $conn->error;
+            $_SESSION['message_type'] = 'danger';
+            header('Location: add_purchase.php');
+            exit();
+        }
+        $stmtBalanceSheet->bind_param(
+            "ssiiiisdds", 
+            $reference, 
+            $transaction_date, 
+            $company_id,
+            $supplier_id,
+            $warehouse_id, 
+            $purchase_id, // as transaction_id
+            $transaction_type, 
+            $amount, 
+            $cost, 
+            $created_at
+        );
+        if (!$stmtBalanceSheet->execute()) {
+            $stmtBalanceSheet->close();
+            $conn->rollback();
+            $_SESSION['message'] = 'Insert failed (Balance Sheet): ' . $stmtBalanceSheet->error;
+            $_SESSION['message_type'] = 'danger';
+            header('Location: add_purchase.php');
+            exit();
+        }
+        $stmtBalanceSheet->close();
 
         // Prepare purchase_items insert
         $itemStmt = $conn->prepare("INSERT INTO purchase_items 

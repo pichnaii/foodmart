@@ -35,20 +35,24 @@
         --white: #ffffff;
         --dark: <?php echo ($config_page['theme_color'] == 1) ? '#191C24' : '#FFFFFF'; ?> !important;;
     }
+    .text-brand {
+        color: var(--primary);
+    }
 </style>
 <!-- Sidebar Start -->
 <div class="sidebar bg-light pe-0 pb-0">
     <nav class="navbar bg-light navbar-light">
         <a href="index.php" class="navbar-brand mx-4 mb-0">
-            <h3 class="text-primary">
-                <img class="rounded-circle me-2" src="img/logo1.png" alt="" style="width: 50px; height: 50px;">A&W Store
+            <h3 class="text-brand">
+                <img class="rounded-circle me-2" src="img/logo1.png" alt="" style="width: 50px; height: 50px;"> 
+                <span class=""></span>A&W Store
             </h3>
         </a>
         <div class="navbar-nav w-100">
             <!-- <a href="index.php" class="nav-item nav-link <?php echo $current_page == 'index.php' || $current_page == 'dashboard_sales.php' ? 'active' : ''; ?>">
                 <i class="fa fa-tachometer-alt me-2"></i>Dashboard
             </a> -->
-            <a href="main_dashboard.php" class="nav-item nav-link <?php echo $current_page == 'index.php' || $current_page == 'dashboard_sales.php' ? 'active' : ''; ?>">
+            <a href="index.php" class="nav-item nav-link <?php echo $current_page == 'index.php' || $current_page == 'dashboard_sales.php' ? 'active' : ''; ?>">
                 <i class="fa fa-tachometer-alt me-2"></i>Dashboard
             </a>
             <?php if (1 + 1 !== 2) { ?>
